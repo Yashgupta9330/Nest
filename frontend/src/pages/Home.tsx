@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import SearchBar from '../components/search';
+import SearchBar from '../components/Search';
+
 
 const Home = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
