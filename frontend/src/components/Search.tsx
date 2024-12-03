@@ -17,9 +17,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ placeholder, searchEndpoint, onSe
     setLoading(true)
     setError(null)
     try {
-      const response = await axios.get(searchEndpoint, {
-        params: { q: query },
-      })
+      const response = await axios.get(searchEndpoint)
 
       onSearchResult(response.data)
     } catch (err) {

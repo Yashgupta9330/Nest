@@ -12,7 +12,7 @@ const Home = () => {
     <div className="container mx-auto mt-4">
       <SearchBar
         placeholder="Search for a committee..."
-        searchEndpoint="http://127.0.0.1:8000/api/v1/owasp/search/committee"
+        searchEndpoint="http://localhost:8000/api/v1/owasp/search/committee?q=yash"
         onSearchResult={handleSearchResult}
       />
     </div>
