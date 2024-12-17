@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
 
 import Card from '../components/Card'
@@ -11,19 +12,36 @@ import { API_URL } from '../utils/credentials.ts'
 export default function Projects() {
   const [projectData, setProjectData] = useState<ProjectDataType | null>(null)
   const [defaultProjects, setDefaultProjects] = useState<ProjectDataType | null>(null)
+  const [initialQuery, setInitialQuery] = useState<string>('')
 
   useEffect(() => {
     document.title = 'OWASP Projects'
+    const queryParams = new URLSearchParams(window.location.search)
+    const urlQuery = queryParams.get('q')
+    if (urlQuery) {
+      setInitialQuery(urlQuery)
+    }
+
     const fetchApiData = async () => {
       try {
-        const response = await fetch(`${API_URL}/owasp/search/project`)
-        const data = await response.json()
+        let response
+        if (urlQuery) {
+          response = await axios.get(`${API_URL}/owasp/search/project`, {
+            params: { q: urlQuery },
+          })
+        } else {
+          response = await fetch(`${API_URL}/owasp/search/project`)
+          response = await response.json()
+        }
+
+        const data = urlQuery ? response.data : response
         setProjectData(data)
         setDefaultProjects(data)
       } catch (error) {
         console.error(error)
       }
     }
+
     fetchApiData()
   }, [])
 
@@ -35,42 +53,42 @@ export default function Projects() {
           searchEndpoint={`${API_URL}/owasp/search/project`}
           onSearchResult={setProjectData}
           defaultResults={defaultProjects}
+          initialQuery={initialQuery}
         />
-        {projectData &&
-          projectData?.projects?.map((project, index) => {
-            const params: string[] = [
-              'idx_updated_at',
-              'idx_forks_count',
-              'idx_stars_count',
-              'idx_contributors_count',
-            ]
-            const filteredIcons = getFilteredIcons(project, params)
-            const handleButtonClick = () => {
-              window.open(`/projects/contribute?q=${project.idx_name}`, '_blank')
-            }
+        {projectData?.projects?.map((project, index) => {
+          const params: string[] = [
+            'idx_updated_at',
+            'idx_forks_count',
+            'idx_stars_count',
+            'idx_contributors_count',
+          ]
+          const filteredIcons = getFilteredIcons(project, params)
+          const handleButtonClick = () => {
+            window.open(`/projects/contribute?q=${project.idx_name}`, '_blank')
+          }
 
-            const SubmitButton = {
-              label: 'Contribute',
-              icon: <FontAwesomeIconWrapper icon="fa-solid fa-code-fork" />,
-              onclick: handleButtonClick,
-            }
+          const SubmitButton = {
+            label: 'Contribute',
+            icon: <FontAwesomeIconWrapper icon="fa-solid fa-code-fork" />,
+            onclick: handleButtonClick,
+          }
 
-            return (
-              <Card
-                key={project.objectID || `project-${index}`}
-                title={project.idx_name}
-                url={project.idx_url}
-                summary={project.idx_summary}
-                level={level[`${project.idx_level as keyof typeof level}`]}
-                icons={filteredIcons}
-                leaders={project.idx_leaders}
-                topContributors={project.idx_top_contributors}
-                topics={project.idx_topics}
-                button={SubmitButton}
-                tooltipLabel={`Contribute to ${project.idx_name}`}
-              />
-            )
-          })}
+          return (
+            <Card
+              key={project.objectID || `project-${index}`}
+              title={project.idx_name}
+              url={project.idx_url}
+              summary={project.idx_summary}
+              level={level[`${project.idx_level as keyof typeof level}`]}
+              icons={filteredIcons}
+              leaders={project.idx_leaders}
+              topContributors={project.idx_top_contributors}
+              topics={project.idx_topics}
+              button={SubmitButton}
+              tooltipLabel={`Contribute to ${project.idx_name}`}
+            />
+          )
+        })}
       </div>
     </div>
   )

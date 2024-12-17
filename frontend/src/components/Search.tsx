@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+
 import { useDebounce } from '../lib/hooks'
 import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types'
 
@@ -10,6 +11,7 @@ interface SearchBarProps<T extends SearchResultType> {
   searchEndpoint: string
   onSearchResult: Dispatch<SetStateAction<T>>
   defaultResults: T
+  initialQuery?: string
 }
 
 const SearchBar = <T extends SearchResultType>({
@@ -17,12 +19,17 @@ const SearchBar = <T extends SearchResultType>({
   searchEndpoint,
   onSearchResult,
   defaultResults,
+  initialQuery = '',
 }: SearchBarProps<T>) => {
-  const [query, setQuery] = useState<string>('')
+  const [query, setQuery] = useState<string>(initialQuery)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
   const debouncedQuery = useDebounce(query, 500)
+
+  useEffect(() => {
+    setQuery(initialQuery)
+  }, [initialQuery])
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
