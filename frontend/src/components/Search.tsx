@@ -1,66 +1,78 @@
-import axios from 'axios'
-import React, { useState, useEffect, useCallback } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useDebounce } from '../lib/hooks';
+import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types';
 
-import { useDebounce } from '../lib/hooks'
-import { ProjectDataType } from '../lib/types'
+type SearchResultType = ProjectDataType | CommitteeDataType | ChapterDataType | null;
 
-interface SearchBarProps {
-  placeholder: string
-  searchEndpoint: string
+interface SearchBarProps<T extends SearchResultType> {
+  placeholder: string;
+  searchEndpoint: string;
   // eslint-disable-next-line no-unused-vars
-  onSearchResult: (results: ProjectDataType | null) => void
-  defaultResults: ProjectDataType | null
+  onSearchResult: (results: T) => void;
+  defaultResults: T;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+const SearchBar = <T extends SearchResultType>({
   placeholder,
   searchEndpoint,
   onSearchResult,
   defaultResults,
-}) => {
-  const [query, setQuery] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
+}: SearchBarProps<T>) => {
+  const [query, setQuery] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const debouncedQuery = useDebounce(query, 500)
+  const debouncedQuery = useDebounce(query, 500);
 
-  const performSearch = useCallback(
-    async (searchQuery: string) => {
-      if (!searchQuery.trim()) {
-        onSearchResult(defaultResults)
-        return
-      }
+  const location = useLocation();
+  const navigate = useNavigate();
 
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await axios.get(searchEndpoint, {
-          params: { q: searchQuery },
-        })
+  const performSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      onSearchResult(defaultResults);
+      return;
+    }
 
-        const defaultresults = response.data
-        onSearchResult(defaultresults)
-      } catch (err) {
-        console.error('Search error:', err)
-        setError('Failed to fetch search results. Please try again.')
-        onSearchResult(defaultResults)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [defaultResults, onSearchResult, searchEndpoint]
-  )
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(searchEndpoint, {
+        params: { q: searchQuery },
+      });
+
+      const results = response.data;
+      onSearchResult(results);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Failed to fetch search results. Please try again.');
+      onSearchResult(defaultResults);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    performSearch(debouncedQuery)
-  }, [debouncedQuery, performSearch])
+    const queryParams = new URLSearchParams(location.search);
+    const queryFromUrl = queryParams.get('q');
+    if (queryFromUrl) {
+      setQuery(queryFromUrl);
+      performSearch(queryFromUrl);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    performSearch(debouncedQuery);
+  }, [debouncedQuery]);
 
   return (
     <div className="mx-auto mt-8 w-full max-w-md">
       <form
         onSubmit={(e) => {
-          e.preventDefault()
-          performSearch(query)
+          e.preventDefault();
+          navigate(`?q=${query}`);
+          performSearch(query);
         }}
         className="relative"
       >
@@ -70,7 +82,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pr-12 text-gray-700 transition-all duration-300 ease-in-out focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
         />
         <button
           type="submit"
@@ -123,7 +134,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </p>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default SearchBar
+export default SearchBar;
