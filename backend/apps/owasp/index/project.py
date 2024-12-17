@@ -3,30 +3,34 @@
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
 
+from apps.common.index import IndexSynonymsMixin
 from apps.owasp.models.project import Project
 
 
 @register(Project)
-class ProjectIndex(AlgoliaIndex):
+class ProjectIndex(AlgoliaIndex, IndexSynonymsMixin):
     """Project index."""
 
     index_name = "projects"
 
     fields = (
         "idx_companies",
-        "idx_top_contributors",
         "idx_contributors_count",
+        "idx_custom_tags",
         "idx_description",
         "idx_forks_count",
         "idx_languages",
         "idx_leaders",
-        "idx_level",
         "idx_level_raw",
+        "idx_level",
         "idx_name",
         "idx_organizations",
+        "idx_repository_descriptions",
+        "idx_repository_names",
         "idx_stars_count",
         "idx_summary",
         "idx_tags",
+        "idx_top_contributors",
         "idx_topics",
         "idx_type",
         "idx_updated_at",
@@ -53,7 +57,8 @@ class ProjectIndex(AlgoliaIndex):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_languages, idx_tags, idx_topics)",
+            "unordered(idx_repository_descriptions, idx_repository_names)",
+            "unordered(idx_custom_tags, idx_languages, idx_tags, idx_topics)",
             "unordered(idx_description)",
             "unordered(idx_companies, idx_organizations)",
             "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
@@ -69,3 +74,8 @@ class ProjectIndex(AlgoliaIndex):
             "organizations",
             "repositories",
         )
+
+    @staticmethod
+    def update_synonyms():
+        """Update synonyms."""
+        ProjectIndex.reindex_synonyms("owasp", "projects")

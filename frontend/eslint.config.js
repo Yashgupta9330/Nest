@@ -1,28 +1,67 @@
 import js from '@eslint/js'
-import globals from 'globals'
+import typescriptEslint from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser'
+import prettierConfig from 'eslint-config-prettier'
+import importPlugin from 'eslint-plugin-import'
+import jest from 'eslint-plugin-jest'
+import prettier from 'eslint-plugin-prettier'
+import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
+import globals from 'globals'
 
-export default tseslint.config(
-  { ignores: ['dist'] },
+export default [
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
+    ignores: ['node_modules', 'build', 'dist', '.cache'],
+  },
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      parser: typescriptParser,
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.es2023,
+        ...globals.jest,
+        ...globals.node,
+      },
     },
     plugins: {
+      '@typescript-eslint': typescriptEslint,
       'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      import: importPlugin,
+      jest,
+      prettier,
+      react,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
+      ...jest.configs.recommended.rules,
+      ...prettierConfig.rules,
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-inferrable-types': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'error',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'prettier/prettier': ['error'],
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+      'react/prop-types': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'import/order': [
         'warn',
-        { allowConstantExport: true },
+        {
+          groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+          alphabetize: { order: 'asc', caseInsensitive: true },
+          'newlines-between': 'always',
+        },
       ],
     },
   },
-)
+]

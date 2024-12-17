@@ -6,12 +6,12 @@ on:
     branches:
       - main
     paths-ignore:
-      - backend/data/**
+      - backend/data/nest.json.gz
   push:
     branches:
       - main
     paths-ignore:
-      - backend/data/**
+      - backend/data/nest.json.gz
   workflow_dispatch:
 
 permissions:
@@ -45,6 +45,26 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run npm format
+        working-directory: frontend
+        run: npm run format
+
+      - name: Run npm lint
+        working-directory: frontend
+        run: npm run lint
+
+
   code-ql:
     name: CodeQL
     needs:
@@ -52,6 +72,11 @@ jobs:
     permissions:
       security-events: write
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language:
+          - javascript-typescript
+          - python
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -59,12 +84,25 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: python
+          languages: ${{ matrix.language }}
+
+      - name: Set up Node
+        if: matrix.language == 'javascript-typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies for frontend
+        if: matrix.language == 'javascript-typescript'
+        working-directory: frontend
+        run: npm install
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: '/language:python'
+          category: '/language:${{ matrix.language }}'
 
   run-tests:
     name: Run tests
@@ -85,9 +123,24 @@ jobs:
           cache-dependency-path: backend/poetry.lock
           python-version: '3.12'
 
-      - name: Run tests
+      - name: Run backend tests
         run: |
-          make test
+          make test-backend
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run frontend tests
+        run: |
+          make test-frontend
 
   build-docker-images:
     name: Build Docker Images
@@ -95,6 +148,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main'
     needs:
+      - code-ql
       - run-tests
     runs-on: ubuntu-latest
     steps:
