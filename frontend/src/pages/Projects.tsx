@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+
 import Card from '../components/Card'
 import { level } from '../components/data'
 import SearchBar from '../components/Search'
