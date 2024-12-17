@@ -1,18 +1,18 @@
-import axios from 'axios'
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useDebounce } from '../lib/hooks';
+import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types';
 
-import { useDebounce } from '../lib/hooks'
-import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types'
 
-type SearchResultType = ProjectDataType | CommitteeDataType | ChapterDataType | null
+type SearchResultType = ProjectDataType | CommitteeDataType | ChapterDataType | null;
 
 interface SearchBarProps<T extends SearchResultType> {
-  placeholder: string
-  searchEndpoint: string
+  placeholder: string;
+  searchEndpoint: string;
   // eslint-disable-next-line no-unused-vars
-  onSearchResult: (results: T) => void
-  defaultResults: T
+  onSearchResult: (results: T) => void;
+  defaultResults: T;
 }
 
 const SearchBar = <T extends SearchResultType>({
@@ -21,59 +21,59 @@ const SearchBar = <T extends SearchResultType>({
   onSearchResult,
   defaultResults,
 }: SearchBarProps<T>) => {
-  const [query, setQuery] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
+  const [query, setQuery] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const debouncedQuery = useDebounce(query, 500)
+  const debouncedQuery = useDebounce(query, 500);
 
-  const location = useLocation()
-  const navigate = useNavigate()
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
-      onSearchResult(defaultResults)
-      return
+      onSearchResult(defaultResults);
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(searchEndpoint, {
         params: { q: searchQuery },
-      })
+      });
 
-      const results = response.data
-      onSearchResult(results)
+      const results = response.data;
+      onSearchResult(results);
     } catch (err) {
-      console.error('Search error:', err)
-      setError('Failed to fetch search results. Please try again.')
-      onSearchResult(defaultResults)
+      console.error('Search error:', err);
+      setError('Failed to fetch search results. Please try again.');
+      onSearchResult(defaultResults);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search)
-    const queryFromUrl = queryParams.get('q')
+    const queryParams = new URLSearchParams(location.search);
+    const queryFromUrl = queryParams.get('q');
     if (queryFromUrl) {
-      setQuery(queryFromUrl)
-      performSearch(queryFromUrl)
+      setQuery(queryFromUrl);
+      performSearch(queryFromUrl);
     }
-  }, [location.search])
+  }, [location.search]);
 
   useEffect(() => {
-    performSearch(debouncedQuery)
-  }, [debouncedQuery])
+    performSearch(debouncedQuery);
+  }, [debouncedQuery]);
 
   return (
     <div className="mx-auto mt-8 w-full max-w-md">
       <form
         onSubmit={(e) => {
-          e.preventDefault()
-          navigate(`?q=${query}`)
-          performSearch(query)
+          e.preventDefault();
+          navigate(`?q=${query}`);
+          performSearch(query);
         }}
         className="relative"
       >
@@ -135,7 +135,7 @@ const SearchBar = <T extends SearchResultType>({
         </p>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default SearchBar
+export default SearchBar;
