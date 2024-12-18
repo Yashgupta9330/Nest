@@ -1,25 +1,23 @@
+import '@testing-library/jest-dom'
 import { render, screen, waitFor } from '@testing-library/react'
+import axios from 'axios'
 import React from 'react'
 
-import '@testing-library/jest-dom'
 import { Committees } from '../../../src/pages'
 import { mockCommitteeData } from '../data/mockCommitteeData'
 
-const mockWindowOpen = jest.fn()
-Object.defineProperty(window, 'open', {
-  value: mockWindowOpen,
-  writable: true,
-})
+jest.mock('axios')
+const mockedAxios = axios as jest.Mocked<typeof axios>
 
 describe('Committees Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    global.fetch = jest.fn().mockResolvedValue({
-      json: async () => mockCommitteeData,
+    mockedAxios.get.mockResolvedValue({
+      data: mockCommitteeData,
     })
 
-    delete window.location
+    delete (window as Partial<Window>).location
     window.location = {
       search: '',
       href: 'http://localhost',
@@ -28,11 +26,12 @@ describe('Committees Component', () => {
 
   test('sets document title on component mount', async () => {
     render(<Committees />)
-    expect(document.title).toBe('OWASP Committees')
+    await waitFor(() => {
+      expect(document.title).toBe('OWASP Committees')
+    })
   })
 
   test('handles URL query parameter correctly', async () => {
-    delete window.location
     window.location = {
       search: '?q=test-query',
       href: 'http://localhost?q=test-query',
@@ -41,8 +40,9 @@ describe('Committees Component', () => {
     render(<Committees />)
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        `${process.env.VITE_NEST_API_URL}/owasp/search/committee?q=test-query`
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('/owasp/search/committee'),
+        { params: { q: 'test-query' } }
       )
     })
   })
@@ -56,7 +56,7 @@ describe('Committees Component', () => {
     })
   })
 
-  test('renders initial loading state', () => {
+  test('renders search bar', () => {
     render(<Committees />)
     expect(screen.getByPlaceholderText('Search for OWASP committees...')).toBeInTheDocument()
   })
@@ -67,14 +67,13 @@ describe('Committees Component', () => {
     await waitFor(() => {
       const learnMoreButtons = screen.getAllByText('Learn More')
       expect(learnMoreButtons.length).toBeGreaterThan(0)
-
       const firstCommittee = mockCommitteeData.committees[0]
       expect(learnMoreButtons[0]).toHaveAttribute('href', firstCommittee.idx_url)
     })
   })
 
   test('handles API fetch error gracefully', async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error('Fetch failed'))
+    mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 

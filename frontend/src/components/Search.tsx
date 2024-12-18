@@ -25,11 +25,13 @@ const SearchBar = <T extends SearchResultType>({
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  const debouncedQuery = useDebounce(query, 500)
-
   useEffect(() => {
-    setQuery(initialQuery)
+    if (initialQuery.trim()) {
+      setQuery(initialQuery)
+    }
   }, [initialQuery])
+
+  const debouncedQuery = useDebounce(query, 500)
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -44,11 +46,11 @@ const SearchBar = <T extends SearchResultType>({
         params: { q: searchQuery },
       })
 
-      const results = response.data
+      const results = response.data.data || response.data
       onSearchResult(results)
     } catch (err) {
-      console.error('Search error:', err)
       setError('Failed to fetch search results. Please try again.')
+      console.error(err)
       onSearchResult(defaultResults)
     } finally {
       setLoading(false)
@@ -56,16 +58,11 @@ const SearchBar = <T extends SearchResultType>({
   }
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search)
-    const queryFromUrl = queryParams.get('q')
-    if (queryFromUrl) {
-      setQuery(queryFromUrl)
-      performSearch(queryFromUrl)
+    if (debouncedQuery.trim()) {
+      performSearch(debouncedQuery)
+    } else {
+      onSearchResult(defaultResults)
     }
-  }, [location.search])
-
-  useEffect(() => {
-    performSearch(debouncedQuery)
   }, [debouncedQuery])
 
   return (

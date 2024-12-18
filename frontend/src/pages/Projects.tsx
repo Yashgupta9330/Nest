@@ -1,49 +1,23 @@
-import axios from 'axios'
-import { useEffect, useState } from 'react'
-
 import Card from '../components/Card'
 import { level } from '../components/data'
 import SearchBar from '../components/Search'
+import { useSearchQuery } from '../hooks/useSearchquery'
 import FontAwesomeIconWrapper from '../lib/FontAwesomeIconWrapper'
 import { ProjectDataType } from '../lib/types'
 import { getFilteredIcons } from '../lib/utils'
-import { API_URL } from '../utils/credentials.ts'
+import { API_URL } from '../utils/credentials'
 
 export default function Projects() {
-  const [projectData, setProjectData] = useState<ProjectDataType | null>(null)
-  const [defaultProjects, setDefaultProjects] = useState<ProjectDataType | null>(null)
-  const [initialQuery, setInitialQuery] = useState<string>('')
-
-  useEffect(() => {
-    document.title = 'OWASP Projects'
-    const queryParams = new URLSearchParams(window.location.search)
-    const urlQuery = queryParams.get('q')
-    if (urlQuery) {
-      setInitialQuery(urlQuery)
-    }
-
-    const fetchApiData = async () => {
-      try {
-        let response
-        if (urlQuery) {
-          response = await axios.get(`${API_URL}/owasp/search/project`, {
-            params: { q: urlQuery },
-          })
-        } else {
-          response = await fetch(`${API_URL}/owasp/search/project`)
-          response = await response.json()
-        }
-
-        const data = urlQuery ? response.data : response
-        setProjectData(data)
-        setDefaultProjects(data)
-      } catch (error) {
-        console.error(error)
-      }
-    }
-
-    fetchApiData()
-  }, [])
+  const {
+    data: projectData,
+    setData: setProjectData,
+    defaultData: defaultProjects,
+    initialQuery,
+  } = useSearchQuery<ProjectDataType>({
+    apiUrl: `${API_URL}/owasp/search/project`,
+    entityKey: 'projects',
+    initialTitle: 'OWASP Projects',
+  })
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-normal p-5 text-text">
@@ -63,6 +37,7 @@ export default function Projects() {
             'idx_contributors_count',
           ]
           const filteredIcons = getFilteredIcons(project, params)
+
           const handleButtonClick = () => {
             window.open(`/projects/contribute?q=${project.idx_name}`, '_blank')
           }

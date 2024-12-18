@@ -1,25 +1,23 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import axios from 'axios'
 import React from 'react'
 
 import '@testing-library/jest-dom'
-import { Chapters } from '../../../src/pages'
+import Chapters from '../../../src/pages/Chapters'
 import { mockChapterData } from '../data/mockChapterData'
 
-const mockWindowOpen = jest.fn()
-Object.defineProperty(window, 'open', {
-  value: mockWindowOpen,
-  writable: true,
-})
+jest.mock('axios')
+const mockedAxios = axios as jest.Mocked<typeof axios>
 
 describe('Chapters Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    global.fetch = jest.fn().mockResolvedValue({
-      json: async () => mockChapterData,
+    mockedAxios.get.mockResolvedValue({
+      data: mockChapterData,
     })
 
-    delete window.location
+    delete (window as Partial<Window>).location
     window.location = {
       search: '',
       href: 'http://localhost',
@@ -28,11 +26,12 @@ describe('Chapters Component', () => {
 
   test('sets document title on component mount', async () => {
     render(<Chapters />)
-    expect(document.title).toBe('OWASP Chapters')
+    await waitFor(() => {
+      expect(document.title).toBe('OWASP Chapters')
+    })
   })
 
   test('handles URL query parameter correctly', async () => {
-    delete window.location
     window.location = {
       search: '?q=test-query',
       href: 'http://localhost?q=test-query',
@@ -41,8 +40,9 @@ describe('Chapters Component', () => {
     render(<Chapters />)
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        `${process.env.VITE_NEST_API_URL}/owasp/search/chapter?q=test-query`
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('/owasp/search/chapter'),
+        { params: { q: 'test-query' } }
       )
     })
   })
@@ -56,7 +56,7 @@ describe('Chapters Component', () => {
     })
   })
 
-  test('renders initial loading state', () => {
+  test('renders search bar', () => {
     render(<Chapters />)
     expect(screen.getByPlaceholderText('Search for OWASP chapters...')).toBeInTheDocument()
   })
@@ -69,12 +69,13 @@ describe('Chapters Component', () => {
       expect(joinButtons.length).toBeGreaterThan(0)
 
       const firstChapter = mockChapterData.chapters[0]
-      expect(joinButtons[0]).toHaveAttribute('href', firstChapter.idx_url)
+      const firstJoinButton = joinButtons[0].closest('a')
+      expect(firstJoinButton).toHaveAttribute('href', firstChapter.idx_url)
     })
   })
 
   test('handles API fetch error gracefully', async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error('Fetch failed'))
+    mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 

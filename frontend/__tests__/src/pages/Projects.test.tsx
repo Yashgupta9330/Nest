@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import axios from 'axios'
 import React from 'react'
 
-import { Projects } from '../../../src/pages'
+import Projects from '../../../src/pages/Projects'
 import mockProjectData from '../data/mockProjectData'
 
 jest.mock('axios')
@@ -19,15 +19,13 @@ describe('Projects Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    global.fetch = jest.fn().mockResolvedValue({
-      json: async () => mockProjectData,
-    })
+    document.title = ''
 
     mockedAxios.get.mockResolvedValue({
       data: mockProjectData,
     })
 
-    delete window.location
+    delete (window as Partial<Window>).location
     window.location = {
       search: '',
       href: 'http://localhost',
@@ -35,31 +33,37 @@ describe('Projects Component', () => {
   })
 
   test('sets document title on component mount', async () => {
-    render(<Projects />)
-    expect(document.title).toBe('OWASP Projects')
+    await act(async () => {
+      render(<Projects />)
+    })
+
+    await waitFor(() => {
+      expect(document.title).toBe('OWASP Projects')
+    })
   })
 
   test('handles URL query parameter correctly', async () => {
-    delete window.location
     window.location = {
       search: '?q=test-query',
       href: 'http://localhost?q=test-query',
     } as Location
 
-    render(<Projects />)
+    await act(async () => {
+      render(<Projects />)
+    })
 
     await waitFor(() => {
       expect(mockedAxios.get).toHaveBeenCalledWith(
         `${process.env.VITE_NEST_API_URL}/owasp/search/project`,
-        {
-          params: { q: 'test-query' },
-        }
+        { params: { q: 'test-query' } }
       )
     })
   })
 
   test('fetches and sets project data correctly', async () => {
-    render(<Projects />)
+    await act(async () => {
+      render(<Projects />)
+    })
 
     await waitFor(() => {
       expect(screen.getByText(mockProjectData.projects[0].idx_name)).toBeInTheDocument()
@@ -67,14 +71,25 @@ describe('Projects Component', () => {
     })
   })
 
+  test('renders search bar', async () => {
+    await act(async () => {
+      render(<Projects />)
+    })
+
+    expect(screen.getByPlaceholderText('Search for OWASP projects...')).toBeInTheDocument()
+  })
+
   test('contribute button opens correct URL in new tab', async () => {
-    render(<Projects />)
+    await act(async () => {
+      render(<Projects />)
+    })
 
     await waitFor(() => {
       const contributeButtons = screen.getAllByText('Contribute')
       expect(contributeButtons.length).toBeGreaterThan(0)
 
-      contributeButtons[0].click()
+      const firstContributeButton = contributeButtons[0]
+      firstContributeButton.closest('button')?.click()
 
       expect(mockWindowOpen).toHaveBeenCalledWith(
         `/projects/contribute?q=${mockProjectData.projects[0].idx_name}`,
@@ -84,17 +99,35 @@ describe('Projects Component', () => {
   })
 
   test('handles API fetch error gracefully', async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error('Fetch failed'))
-    mockedAxios.get.mockRejectedValue(new Error('Axios get failed'))
+    mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    render(<Projects />)
+    await act(async () => {
+      render(<Projects />)
+    })
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled()
     })
 
     consoleSpy.mockRestore()
+  })
+
+  test('renders project details', async () => {
+    await act(async () => {
+      render(<Projects />)
+    })
+
+    await waitFor(() => {
+      const firstProject = mockProjectData.projects[0]
+
+      expect(screen.getByText(firstProject.idx_name)).toBeInTheDocument()
+      expect(screen.getByText(firstProject.idx_summary)).toBeInTheDocument()
+
+      firstProject.idx_topics.forEach((topic) => {
+        expect(screen.getByText(topic)).toBeInTheDocument()
+      })
+    })
   })
 })

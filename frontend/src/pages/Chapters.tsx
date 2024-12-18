@@ -1,46 +1,22 @@
-import { useEffect, useState } from 'react'
-
 import Card from '../components/Card'
 import SearchBar from '../components/Search'
+import { useSearchQuery } from '../hooks/useSearchquery'
 import FontAwesomeIconWrapper from '../lib/FontAwesomeIconWrapper'
 import { ChapterDataType } from '../lib/types'
 import { handleSocialUrls } from '../lib/utils'
 import { API_URL } from '../utils/credentials'
 
 export default function Chapters() {
-  const [chapterData, setChapterData] = useState<ChapterDataType | null>(null)
-  const [defaultChapters, setDefaultChapters] = useState<ChapterDataType | null>(null)
-  const [initialQuery, setInitialQuery] = useState<string>('')
-
-  useEffect(() => {
-    document.title = 'OWASP Chapters'
-    const queryParams = new URLSearchParams(window.location.search)
-    const urlQuery = queryParams.get('q')
-    if (urlQuery) {
-      setInitialQuery(urlQuery)
-    }
-
-    const fetchApiData = async () => {
-      try {
-        let response
-        if (urlQuery) {
-          response = await fetch(`${API_URL}/owasp/search/chapter?q=${urlQuery}`)
-          response = await response.json()
-        } else {
-          response = await fetch(`${API_URL}/owasp/search/chapter`)
-          response = await response.json()
-        }
-
-        const data = urlQuery ? response.data : response
-        setChapterData(data)
-        setDefaultChapters(data)
-      } catch (error) {
-        console.error(error)
-      }
-    }
-
-    fetchApiData()
-  }, [])
+  const {
+    data: chapterData,
+    setData: setChapterData,
+    defaultData: defaultChapters,
+    initialQuery,
+  } = useSearchQuery<ChapterDataType>({
+    apiUrl: `${API_URL}/owasp/search/chapter`,
+    entityKey: 'chapters',
+    initialTitle: 'OWASP Chapters',
+  })
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-normal p-5 text-text">
