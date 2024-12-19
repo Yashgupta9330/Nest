@@ -6,9 +6,9 @@ import App from './App.tsx'
 import ErrorWrapper from './ErrorWrapper'
 
 createRoot(document.getElementById('root')!).render(
-    <BrowserRouter>
-      <ErrorWrapper>
-        <App />
-      </ErrorWrapper>
-    </BrowserRouter>
+  <BrowserRouter>
+    <ErrorWrapper>
+      <App />
+    </ErrorWrapper>
+  </BrowserRouter>
 )

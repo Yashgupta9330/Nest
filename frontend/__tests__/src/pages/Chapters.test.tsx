@@ -4,6 +4,7 @@ import React from 'react'
 
 import '@testing-library/jest-dom'
 import Chapters from '../../../src/pages/Chapters'
+import logger from '../../../src/utils/logger'
 import { mockChapterData } from '../data/mockChapterData'
 
 jest.mock('axios')
@@ -77,7 +78,7 @@ describe('Chapters Component', () => {
   test('handles API fetch error gracefully', async () => {
     mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest.spyOn(logger, 'error').mockImplementation(() => {})
 
     render(<Chapters />)
 

@@ -6,7 +6,6 @@ import { CommitteeDataType } from '../lib/types'
 import { getFilteredIcons, handleSocialUrls } from '../lib/utils'
 import { API_URL } from '../utils/credentials'
 
-
 export default function Committees() {
   const {
     data: committeeData,
@@ -18,7 +17,6 @@ export default function Committees() {
     entityKey: 'committees',
     initialTitle: 'OWASP Committees',
   })
-
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-normal p-5 text-text">

@@ -4,6 +4,7 @@ import axios from 'axios'
 import React from 'react'
 
 import { Committees } from '../../../src/pages'
+import logger from '../../../src/utils/logger'
 import { mockCommitteeData } from '../data/mockCommitteeData'
 
 jest.mock('axios')
@@ -75,7 +76,7 @@ describe('Committees Component', () => {
   test('handles API fetch error gracefully', async () => {
     mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest.spyOn(logger, 'error').mockImplementation(() => {})
 
     render(<Committees />)
 

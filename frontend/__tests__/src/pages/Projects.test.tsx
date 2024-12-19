@@ -4,6 +4,7 @@ import axios from 'axios'
 import React from 'react'
 
 import Projects from '../../../src/pages/Projects'
+import logger from '../../../src/utils/logger'
 import mockProjectData from '../data/mockProjectData'
 
 jest.mock('axios')
@@ -101,7 +102,7 @@ describe('Projects Component', () => {
   test('handles API fetch error gracefully', async () => {
     mockedAxios.get.mockRejectedValue(new Error('Fetch failed'))
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest.spyOn(logger, 'error').mockImplementation(() => {})
 
     await act(async () => {
       render(<Projects />)

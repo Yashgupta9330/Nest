@@ -2,6 +2,8 @@ import axios from 'axios'
 import { useState, useEffect, useCallback } from 'react'
 import { Dispatch, SetStateAction } from 'react'
 
+import logger from '../utils/logger'
+
 /* eslint-disable-next-line */
 interface UseSearchQueryOptions<_T> {
   apiUrl: string
@@ -21,7 +23,7 @@ export function useSearchQuery<T>({ apiUrl, entityKey, initialTitle }: UseSearch
       setData(fetchedData)
       setDefaultData(fetchedData)
     } catch (error) {
-      console.error(`Error fetching default ${entityKey}:`, error)
+      logger.error(`Error fetching default ${entityKey}:`, error)
     }
   }, [apiUrl, entityKey])
 
@@ -31,7 +33,7 @@ export function useSearchQuery<T>({ apiUrl, entityKey, initialTitle }: UseSearch
       const fetchedData = response.data
       setDefaultData(fetchedData)
     } catch (error) {
-      console.error(`Error fetching default ${entityKey}:`, error)
+      logger.error(`Error fetching default ${entityKey}:`, error)
     }
   }, [apiUrl, entityKey])
 
@@ -45,7 +47,7 @@ export function useSearchQuery<T>({ apiUrl, entityKey, initialTitle }: UseSearch
         setData(fetchedData)
         setDefaultData(fetchedData)
       } catch (error) {
-        console.error(`Error searching ${entityKey}:`, error)
+        logger.error(`Error searching ${entityKey}:`, error)
       }
     },
     [apiUrl, entityKey]
@@ -69,7 +71,7 @@ export function useSearchQuery<T>({ apiUrl, entityKey, initialTitle }: UseSearch
           document.title = initialTitle
         }
       } catch (error) {
-        console.error('Error fetching data:', error)
+        logger.error('Error fetching data:', error)
       }
     }
 

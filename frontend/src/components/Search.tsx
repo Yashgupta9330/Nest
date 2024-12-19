@@ -1,7 +1,9 @@
 import axios from 'axios'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+
 import { useDebounce } from '../lib/hooks'
 import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types'
+import logger from '../utils/logger'
 
 type SearchResultType = ProjectDataType | CommitteeDataType | ChapterDataType | null
 
@@ -49,7 +51,7 @@ const SearchBar = <T extends SearchResultType>({
       onSearchResult(results)
     } catch (err) {
       setError('Failed to fetch search results. Please try again.')
-      console.error(err)
+      logger.error(err)
       onSearchResult(defaultResults)
     } finally {
       setLoading(false)
