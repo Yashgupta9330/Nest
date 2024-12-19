@@ -6,7 +6,9 @@ import { ChapterDataType } from '../lib/types'
 import { handleSocialUrls } from '../lib/utils'
 import { API_URL } from '../utils/credentials'
 
+
 export default function Chapters() {
+
   const {
     data: chapterData,
     setData: setChapterData,

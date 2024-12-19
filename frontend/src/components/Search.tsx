@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-
 import { useDebounce } from '../lib/hooks'
 import { ChapterDataType, CommitteeDataType, ProjectDataType } from '../lib/types'
 
