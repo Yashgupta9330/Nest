@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import axios from 'axios'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 
@@ -65,75 +66,66 @@ const SearchBar = <T extends SearchResultType>({
       onSearchResult(defaultResults)
     }
   }, [debouncedQuery])
+=======
+import { debounce } from 'lodash'
+import { Search, X } from 'lucide-react'
+import React, { useCallback, useRef, useState } from 'react'
+
+interface SearchProps {
+  // eslint-disable-next-line no-unused-vars
+  onSearch: (query: string) => void
+  placeholder: string
+}
+
+const SearchComponent: React.FC<SearchProps> = ({ onSearch, placeholder }) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      onSearch(query)
+    }, 500),
+    []
+  )
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+    debouncedSearch(e.target.value)
+  }
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    onSearch('')
+    inputRef.current?.focus()
+  }
+>>>>>>> 2add9c805c182a6499007faca01e0d3fa29a52c2
 
   return (
-    <div className="mx-auto mt-8 w-full max-w-md">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          performSearch(query)
-        }}
-        className="relative"
-      >
+    <div className="w-full max-w-md p-4">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
+          ref={inputRef}
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchQuery}
+          onChange={handleSearchChange}
           placeholder={placeholder}
+<<<<<<< HEAD
           className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pr-12 text-gray-700 transition-all duration-300 ease-in-out focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+=======
+          className="h-12 w-full rounded-lg border border-gray-300 pl-10 pr-10 text-lg text-black transition duration-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>>>>>>> 2add9c805c182a6499007faca01e0d3fa29a52c2
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="absolute right-2 top-1/2 -translate-y-1/2 transform rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors duration-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Search"
-        >
-          {loading ? (
-            <svg
-              className="h-5 w-5 animate-spin text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          ) : (
-            <svg
-              className="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          )}
-        </button>
-      </form>
-      {error && (
-        <p className="mt-2 text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
+        {searchQuery && (
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            onClick={handleClearSearch}
+          >
+            <X className="h-4 w-4 text-gray-400" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }
 
-export default SearchBar
+export default SearchComponent
