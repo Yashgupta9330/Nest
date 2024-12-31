@@ -18,6 +18,11 @@ class ProjectIndexMixin(GenericEntityMixin):
         return self.contributors_count
 
     @property
+    def idx_custom_tags(self):
+        """Return custom tags for indexing."""
+        return self.custom_tags
+
+    @property
     def idx_forks_count(self):
         """Return forks count for indexing."""
         return self.forks_count
@@ -26,6 +31,11 @@ class ProjectIndexMixin(GenericEntityMixin):
     def idx_languages(self):
         """Return languages for indexing."""
         return self.languages
+
+    @property
+    def idx_key(self):
+        """Return key for indexing."""
+        return self.key.replace("www-project-", "")
 
     @property
     def idx_level(self):
@@ -46,6 +56,32 @@ class ProjectIndexMixin(GenericEntityMixin):
     def idx_organizations(self):
         """Return organizations for indexing."""
         return join_values(fields=(o.name for o in self.organizations.all()))
+
+    @property
+    def idx_repository_descriptions(self):
+        """Return repository descriptions for indexing.
+
+        Description of the default OWASP project repository + 4 most recently updated repositories.
+        """
+        return [self.owasp_repository.description] + [
+            repository.description
+            for repository in self.repositories.exclude(id=self.owasp_repository.id)
+            .exclude(description="")
+            .order_by("-updated_at")[:4]
+        ]
+
+    @property
+    def idx_repository_names(self):
+        """Return repository names for indexing.
+
+        Name of the default OWASP project repository + 4 most recently updated repositories.
+        """
+        return [self.owasp_repository.name] + [
+            repository.name
+            for repository in self.repositories.exclude(id=self.owasp_repository.id)
+            .exclude(name="")
+            .order_by("-updated_at")[:4]
+        ]
 
     @property
     def idx_stars_count(self):

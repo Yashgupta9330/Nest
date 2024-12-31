@@ -1,10 +1,10 @@
-import { footerSections } from '../utils/constants';
-import { Section } from '../utils/constants';
+import { footerSections } from 'utils/constants'
+import { Section } from 'utils/constants'
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-slate-200 dark:bg-slate-800 w-full  ">
-      <div className="container px-4 py-4 md:py-8 text-slate-800 dark:text-slate-200">
+    <footer className="w-full border-t bg-slate-200 dark:bg-slate-800">
+      <div className="container px-4 py-4 text-slate-800 md:py-8 dark:text-slate-200">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           {footerSections.map((section: Section) => (
             <div key={section.title} className="space-y-4">
@@ -16,6 +16,7 @@ export default function Footer() {
                       <span className="text-slate-600 dark:text-slate-400">{link.text}</span>
                     ) : (
                       <a
+                        target="_blank"
                         className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                         href={link.href}
                       >
@@ -28,8 +29,8 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className=" pt-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:ml-[52%]">
+        <div className="pt-8">
+          <div className="flex flex-col gap-4 sm:ml-[52%] sm:flex-row sm:items-center">
             <p className="text-sm text-slate-600 dark:text-slate-400">
               © <span id="year">{new Date().getFullYear()}</span> OWASP Nest. All rights reserved.
             </p>
@@ -37,5 +38,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  );
+  )
 }
