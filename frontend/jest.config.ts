@@ -4,7 +4,7 @@ export default {
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/components/**',
-    '!src/index.tsx',
+    '!src/**/index.ts',
     '!src/lib/**',
     '!src/main.tsx',
     '!src/reportWebVitals.ts',
@@ -28,6 +28,11 @@ export default {
   testEnvironment: 'jest-environment-jsdom',
   testPathIgnorePatterns: ['<rootDir>/__tests__/src/data/'],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.tsx?$': '@swc/jest',
   },
+  moduleNameMapper: {
+    '^@tests/(.*)$': '<rootDir>/__tests__/src/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  moduleDirectories: ['node_modules', 'src'],
 }

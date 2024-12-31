@@ -3,12 +3,12 @@
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
 
-from apps.common.index import IndexSynonymsMixin
+from apps.common.index import IndexBase
 from apps.owasp.models.project import Project
 
 
 @register(Project)
-class ProjectIndex(AlgoliaIndex, IndexSynonymsMixin):
+class ProjectIndex(AlgoliaIndex, IndexBase):
     """Project index."""
 
     index_name = "projects"
@@ -19,6 +19,7 @@ class ProjectIndex(AlgoliaIndex, IndexSynonymsMixin):
         "idx_custom_tags",
         "idx_description",
         "idx_forks_count",
+        "idx_key",
         "idx_languages",
         "idx_leaders",
         "idx_level_raw",

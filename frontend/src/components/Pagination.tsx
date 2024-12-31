@@ -5,7 +5,7 @@ interface PaginationProps {
   currentPage: number
   totalPages: number
   isLoaded: boolean
-  // eslint-disable-next-line no-unused-vars
+
   onPageChange: (page: number) => void
 }
 
@@ -92,11 +92,6 @@ const Pagination: React.FC<PaginationProps> = ({
         >
           Next
         </button>
-      </div>
-      <div>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Page {currentPage} of {totalPages}
-        </p>
       </div>
     </div>
   )

@@ -69,29 +69,43 @@ const SearchBar = <T extends SearchResultType>({
 =======
 import { debounce } from 'lodash'
 import { Search, X } from 'lucide-react'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 
 interface SearchProps {
-  // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void
   placeholder: string
+  initialValue?: string
 }
 
-const SearchComponent: React.FC<SearchProps> = ({ onSearch, placeholder }) => {
-  const [searchQuery, setSearchQuery] = useState('')
+const SearchComponent: React.FC<SearchProps> = ({ onSearch, placeholder, initialValue = '' }) => {
+  const [searchQuery, setSearchQuery] = useState(initialValue)
   const inputRef = useRef<HTMLInputElement>(null)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      onSearch(query)
-    }, 500),
-    []
+
+  useEffect(() => {
+    setSearchQuery(initialValue)
+  }, [initialValue])
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const debouncedSearch = useMemo(
+    () => debounce((query: string) => onSearch(query), 750),
+    [onSearch]
   )
 
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel()
+    }
+  }, [debouncedSearch])
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-    debouncedSearch(e.target.value)
+    const newQuery = e.target.value
+    setSearchQuery(newQuery)
+    debouncedSearch(newQuery)
   }
+
   const handleClearSearch = () => {
     setSearchQuery('')
     onSearch('')

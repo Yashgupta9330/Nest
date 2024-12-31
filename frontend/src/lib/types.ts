@@ -27,6 +27,8 @@ export type project = {
 
 export interface IssuesDataType {
   issues: IssueType[]
+  open_issues_count: number
+  total_pages: number
 }
 
 export interface IssueType {
@@ -88,4 +90,9 @@ export interface CommitteeDataType {
   active_committees_count: number
   committees: CommitteeType[]
   total_pages: number
+}
+
+export interface AlgoliaResponseType<T> {
+  hits: T[]
+  totalPages: number
 }

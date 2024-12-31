@@ -1,3 +1,6 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+
 import js from '@eslint/js'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
@@ -9,7 +12,11 @@ import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 export default [
+  react.configs.flat['jsx-runtime'],
   {
     ignores: ['node_modules', 'build', 'dist', '.cache'],
   },
@@ -36,6 +43,15 @@ export default [
       react,
     },
     settings: {
+      'import/resolver': {
+        alias: {
+          map: [
+            ['@tests', path.resolve(__dirname, '__tests__/src')],
+            ['@', path.resolve(__dirname, 'src')],
+          ],
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        },
+      },
       react: {
         version: 'detect',
       },
@@ -48,7 +64,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-inferrable-types': 'warn',
       '@typescript-eslint/no-unused-expressions': 'error',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prettier/prettier': ['error'],
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/rules-of-hooks': 'error',
@@ -57,12 +73,20 @@ export default [
       'import/order': [
         'warn',
         {
-          groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
           alphabetize: { order: 'asc', caseInsensitive: true },
-          'newlines-between': 'always',
+          groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+          pathGroups: [
+            { pattern: 'lib/**', group: 'internal', position: 'after' },
+            { pattern: 'components/**', group: 'internal', position: 'after' },
+            { pattern: 'pages/**', group: 'internal', position: 'after' },
+
+            { pattern: '@tests/**', group: 'internal', position: 'after' },
+          ],
+          pathGroupsExcludedImportTypes: ['builtin'],
         },
       ],
       'no-console': 'error',
+      'no-unused-vars': 'off',
     },
     ignores: ['src/utils/logger.ts'],
   },
