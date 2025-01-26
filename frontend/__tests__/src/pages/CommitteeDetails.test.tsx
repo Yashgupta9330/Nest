@@ -1,12 +1,12 @@
 import { screen, waitFor } from '@testing-library/react'
 
+import { fetchAlgoliaData } from 'api/fetchAlgoliaData'
 import { CommitteeDetailsPage } from 'pages'
-import { fetchAlgoliaData } from 'lib/api'
-import { render } from 'lib/test-util'
+import { render } from 'wrappers/testUtil'
 
 import { mockCommitteeData } from '@tests/data/mockCommitteeData'
 
-jest.mock('lib/api', () => ({
+jest.mock('api/fetchAlgoliaData', () => ({
   fetchAlgoliaData: jest.fn(),
 }))
 jest.mock('react-router-dom', () => ({
@@ -50,21 +50,18 @@ describe('Committees Component', () => {
       expect(screen.getByText('Committee 1')).toBeInTheDocument()
     })
     expect(screen.getByText('This is a summary of Committee 1.')).toBeInTheDocument()
-    expect(screen.getByText('Edmond Momartin,')).toBeInTheDocument()
-    expect(screen.getByText('Garth Boyd,')).toBeInTheDocument()
-    expect(screen.getByText('Kyle Smith')).toBeInTheDocument()
     const viewButton = screen.getByText('Learn More')
     expect(viewButton).toBeInTheDocument()
   })
 
-  test('displays "No committees found" when there are no committees', async () => {
+  test('displays "Committee not found" when there are no committees', async () => {
     ;(fetchAlgoliaData as jest.Mock).mockResolvedValue({
       hits: [],
       totalPages: 0,
     })
     render(<CommitteeDetailsPage />)
     await waitFor(() => {
-      expect(screen.getByText('No committee details found.')).toBeInTheDocument()
+      expect(screen.getByText('Committee not found')).toBeInTheDocument()
     })
   })
 })

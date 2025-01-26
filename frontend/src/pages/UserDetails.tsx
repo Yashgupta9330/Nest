@@ -8,12 +8,12 @@ import {
   faUser,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { fetchAlgoliaData } from 'api/fetchAlgoliaData'
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { UserDetailsProps } from 'types/user'
 import logger from 'utils/logger'
-import { fetchAlgoliaData } from 'lib/api'
-import { UserDetailsProps } from 'lib/types'
-import { IndexedObject, removeIdxPrefix } from 'lib/utils'
+import { ErrorDisplay } from 'wrappers/ErrorWrapper'
 import LoadingSpinner from 'components/LoadingSpinner'
 
 const UserDetailsPage: React.FC = () => {
@@ -24,12 +24,11 @@ const UserDetailsPage: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const { hits } = await fetchAlgoliaData('users', userKey, 1)
+        const { hits } = await fetchAlgoliaData('users', userKey, 1, userKey)
         if (hits.length === 0) {
           setUser(null)
         } else {
-          const userData = removeIdxPrefix(hits[0] as IndexedObject)
-          setUser(userData as unknown as UserDetailsProps)
+          setUser(hits[0] as unknown as UserDetailsProps)
         }
       } catch (error) {
         logger.error(error)
@@ -50,9 +49,11 @@ const UserDetailsPage: React.FC = () => {
 
   if (!isLoading && user == null) {
     return (
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User not found</h1>
-      </div>
+      <ErrorDisplay
+        statusCode={404}
+        title="User not found"
+        message="Sorry, the user you're looking for doesn't exist"
+      />
     )
   }
 
@@ -73,7 +74,7 @@ const UserDetailsPage: React.FC = () => {
                     />
                   </div>
                   <div className="mt-6 sm:mt-0 sm:pb-4">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-nowrap text-3xl font-bold text-gray-900 dark:text-white">
                       {user.name}
                     </h1>
                     <a
@@ -90,7 +91,7 @@ const UserDetailsPage: React.FC = () => {
                   href={user.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group mt-4 inline-flex items-center space-x-2 rounded-full bg-gray-200 px-4 py-2 align-top text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600/60 dark:text-white dark:hover:bg-gray-600 dark:hover:text-gray-200"
+                  className="group mt-4 inline-flex flex-nowrap items-center space-x-2 text-nowrap rounded-full bg-gray-200 px-4 py-2 align-top text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600/60 dark:text-white dark:hover:bg-gray-600 dark:hover:text-gray-200"
                 >
                   <FontAwesomeIcon icon={faGithub} className="text-sm" />
                   <span>Visit GitHub Profile</span>
@@ -126,7 +127,7 @@ const UserDetailsPage: React.FC = () => {
               )}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4 bg-gray-200 p-6 sm:grid-cols-3 dark:bg-gray-900">
+          <div className="grid grid-cols-3 gap-4 bg-gray-200 p-6 dark:bg-gray-900 sm:grid-cols-3">
             {[
               { icon: faUser, label: 'Followers', value: user.followers_count },
               { icon: faUserPlus, label: 'Following', value: user.following_count },
@@ -153,7 +154,7 @@ const UserDetailsPage: React.FC = () => {
           </div>
           <div className="border-t border-gray-200 px-6 py-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             Joined{' '}
-            {new Date(user.created_at).toLocaleDateString('en-US', {
+            {new Date(Number(user.created_at) * 1000).toLocaleDateString('en-US', {
               month: 'long',
               day: 'numeric',
               year: 'numeric',

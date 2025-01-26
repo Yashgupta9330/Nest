@@ -3,6 +3,7 @@
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
 
+from apps.common.index import IS_LOCAL_BUILD, LOCAL_INDEX_LIMIT
 from apps.owasp.models.committee import Committee
 
 
@@ -28,6 +29,8 @@ class CommitteeIndex(AlgoliaIndex):
     settings = {
         "attributesForFaceting": [
             "filterOnly(idx_key)",
+            "idx_name",
+            "idx_tags",
         ],
         "indexLanguages": ["en"],
         "customRanking": [
@@ -46,7 +49,8 @@ class CommitteeIndex(AlgoliaIndex):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
+            "unordered(idx_leaders)"
+            "unordered(idx_top_contributors.login, idx_top_contributors.name)",
             "unordered(idx_tags)",
         ],
     }
@@ -55,6 +59,7 @@ class CommitteeIndex(AlgoliaIndex):
 
     def get_queryset(self):
         """Get queryset."""
-        return Committee.active_committees.select_related(
+        qs = Committee.active_committees.select_related(
             "owasp_repository",
         )
+        return qs[:LOCAL_INDEX_LIMIT] if IS_LOCAL_BUILD else qs

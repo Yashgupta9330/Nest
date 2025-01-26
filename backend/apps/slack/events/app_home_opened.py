@@ -5,14 +5,14 @@ import logging
 from django.conf import settings
 from slack_sdk.errors import SlackApiError
 
+from apps.common.constants import NL, TAB
 from apps.slack.apps import SlackConfig
 from apps.slack.blocks import get_header, markdown
-from apps.slack.constants import NL, TAB
 
 logger = logging.getLogger(__name__)
 
 
-def handler(event, client, ack):
+def app_home_opened_handler(event, client, ack):
     """Handle the app_home_opened event."""
     ack()
 
@@ -33,10 +33,13 @@ def handler(event, client, ack):
                     f"events.{2*NL}"
                     "I'm OWASP @nestbot, your friendly neighborhood bot. Please use one of the "
                     f"following commands:{NL}"
-                    f"{TAB}• /contribute --help{NL}"
-                    f"{TAB}• /gsoc --help{NL}"
-                    f"{TAB}• /projects --help{NL}"
-                    f"{TAB}• /owasp --help{NL}"
+                    f"{TAB}• /chapters{NL}"
+                    f"{TAB}• /committees{NL}"
+                    f"{TAB}• /contribute{NL}"
+                    f"{TAB}• /gsoc{NL}"
+                    f"{TAB}• /leaders{NL}"
+                    f"{TAB}• /projects{NL}"
+                    f"{TAB}• /owasp{NL}"
                 ),
             ],
         }
@@ -48,5 +51,4 @@ def handler(event, client, ack):
 
 
 if SlackConfig.app:
-    # Register the app home opened event handler
-    SlackConfig.app.event("app_home_opened")(handler)
+    app_home_opened_handler = SlackConfig.app.event("app_home_opened")(app_home_opened_handler)

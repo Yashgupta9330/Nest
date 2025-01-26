@@ -1,8 +1,9 @@
+import { fetchAlgoliaData } from 'api/fetchAlgoliaData'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { fetchAlgoliaData } from 'lib/api'
-import FontAwesomeIconWrapper from 'lib/FontAwesomeIconWrapper'
-import { getFilteredIcons, handleSocialUrls } from 'lib/utils'
+import { getFilteredIcons, handleSocialUrls } from 'utils/utility'
+import { ErrorDisplay } from 'wrappers/ErrorWrapper'
+import FontAwesomeIconWrapper from 'wrappers/FontAwesomeIconWrapper'
 import Card from 'components/Card'
 import LoadingSpinner from 'components/LoadingSpinner'
 
@@ -32,34 +33,35 @@ const CommitteeDetailsPage = () => {
 
   if (!committee)
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-muted-foreground text-lg font-medium">No committee details found.</p>
-      </div>
+      <ErrorDisplay
+        statusCode={404}
+        title="Committee not found"
+        message="Sorry, the committee you're looking for doesn't exist"
+      />
     )
 
   const SubmitButton = {
     label: 'Learn More',
     icon: <FontAwesomeIconWrapper icon="fa-solid fa-people-group" />,
-    url: committee.idx_url,
+    url: committee.url,
   }
 
-  const params: string[] = ['idx_updated_at']
+  const params: string[] = ['updated_at']
   const filteredIcons = getFilteredIcons(committee, params)
-  const formattedUrls = handleSocialUrls(committee.idx_related_urls)
+  const formattedUrls = handleSocialUrls(committee.related_urls)
   return (
     <div className="container mx-auto pb-16 pt-24 xl:max-w-full">
       <div className="flex justify-center">
         <Card
           key={committee.objectID}
-          title={committee.idx_name}
-          url={committee.idx_url}
-          summary={committee.idx_summary}
+          title={committee.name}
+          url={committee.url}
+          summary={committee.summary}
           icons={filteredIcons}
-          leaders={committee.idx_leaders}
-          topContributors={committee.idx_top_contributors}
+          topContributors={committee.top_contributors}
           button={SubmitButton}
           social={formattedUrls}
-          tooltipLabel={`Learn more about ${committee.idx_name}`}
+          tooltipLabel={`Learn more about ${committee.name}`}
         />
       </div>
     </div>

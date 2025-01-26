@@ -1,8 +1,8 @@
+import { useSearchPage } from 'hooks/useSearchPage'
 import { useNavigate } from 'react-router-dom'
-import FontAwesomeIconWrapper from 'lib/FontAwesomeIconWrapper'
-import { useSearchPage } from 'lib/hooks/useSearchPage'
-import { CommitteeType } from 'lib/types'
-import { getFilteredIcons, handleSocialUrls } from 'lib/utils'
+import { CommitteeType } from 'types/committee'
+import { getFilteredIcons, handleSocialUrls } from 'utils/utility'
+import FontAwesomeIconWrapper from 'wrappers/FontAwesomeIconWrapper'
 import Card from 'components/Card'
 import SearchPageLayout from 'components/SearchPageLayout'
 
@@ -20,12 +20,12 @@ const CommitteesPage = () => {
     pageTitle: 'OWASP Committees',
   })
   const navigate = useNavigate()
-  const renderCommitteeCard = (committee: CommitteeType, index: number) => {
-    const params: string[] = ['idx_updated_at']
+  const renderCommitteeCard = (committee: CommitteeType) => {
+    const params: string[] = ['updated_at']
     const filteredIcons = getFilteredIcons(committee, params)
-    const formattedUrls = handleSocialUrls(committee.idx_related_urls)
+    const formattedUrls = handleSocialUrls(committee.related_urls)
     const handleButtonClick = () => {
-      navigate(`/committees/${committee.idx_key}`)
+      navigate(`/committees/${committee.key}`)
     }
 
     const SubmitButton = {
@@ -36,16 +36,15 @@ const CommitteesPage = () => {
 
     return (
       <Card
-        key={committee.objectID || `committee-${index}`}
-        title={committee.idx_name}
-        url={`committees/${committee.idx_key}`}
-        summary={committee.idx_summary}
+        key={committee.objectID}
+        title={committee.name}
+        url={`/committees/${committee.key}`}
+        summary={committee.summary}
         icons={filteredIcons}
-        leaders={committee.idx_leaders}
-        topContributors={committee.idx_top_contributors}
+        topContributors={committee.top_contributors}
         button={SubmitButton}
         social={formattedUrls}
-        tooltipLabel={`Learn more about ${committee.idx_name}`}
+        tooltipLabel={`Learn more about ${committee.name}`}
       />
     )
   }
@@ -53,6 +52,7 @@ const CommitteesPage = () => {
   return (
     <SearchPageLayout
       isLoaded={isLoaded}
+      indexName="committees"
       totalPages={totalPages}
       currentPage={currentPage}
       onSearch={handleSearch}

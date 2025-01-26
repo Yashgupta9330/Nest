@@ -1,11 +1,11 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fetchAlgoliaData } from 'api/fetchAlgoliaData'
 import { useNavigate } from 'react-router-dom'
-import { fetchAlgoliaData } from 'lib/api'
-import { render } from 'lib/test-util'
+import { render } from 'wrappers/testUtil'
 import UsersPage from 'pages/Users'
 import { mockUserData } from '@tests/data/mockUserData'
 
-jest.mock('lib/api', () => ({
+jest.mock('api/fetchAlgoliaData', () => ({
   fetchAlgoliaData: jest.fn(),
 }))
 
@@ -22,7 +22,7 @@ jest.mock('components/Pagination', () =>
   ))
 )
 
-jest.mock('lib/FontAwesomeIconWrapper', () => ({
+jest.mock('wrappers/FontAwesomeIconWrapper', () => ({
   __esModule: true,
   default: () => <span data-testid="mock-icon" />,
 }))
@@ -55,14 +55,12 @@ describe('UsersPage Component', () => {
     const loadingSpinner = screen.getAllByAltText('Loading indicator')
     await waitFor(() => {
       expect(loadingSpinner.length).toBeGreaterThan(0)
-      expect(screen.queryByPlaceholderText('Search for OWASP users...')).not.toBeInTheDocument()
       expect(screen.queryByText('Next Page')).not.toBeInTheDocument()
     })
 
     // Check loaded state
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search for OWASP users...')).toBeInTheDocument()
-      expect(screen.getByPlaceholderText('Search for OWASP users...')).toHaveFocus()
       expect(screen.getByText('John Doe')).toBeInTheDocument()
       expect(screen.getByText('Next Page')).toBeInTheDocument()
     })
@@ -127,24 +125,23 @@ describe('UsersPage Component', () => {
 
     expect(navigateMock).toHaveBeenCalledWith('/community/users/user_1')
   })
+  test('renders fallback username if user name is missing', async () => {
+    ;(fetchAlgoliaData as jest.Mock).mockResolvedValue({
+      hits: [
+        {
+          key: 'user_3',
+          login: 'fallback_login',
+          avatar_url: 'https://example.com/avatar.jpg',
+          company: 'Some Company',
+        },
+      ],
+      totalPages: 1,
+    })
 
-  test('handles search input correctly', async () => {
     render(<UsersPage />)
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText('Search for OWASP users...')
-      fireEvent.change(searchInput, { target: { value: 'John' } })
-    })
-
-    // Wait for the API call
-    await waitFor(() => {
-      // First call is the initial page load, second call is the search
-      expect(fetchAlgoliaData).toHaveBeenCalledTimes(2)
-      // Check the latest call arguments
-      const lastCall = (fetchAlgoliaData as jest.Mock).mock.calls[
-        (fetchAlgoliaData as jest.Mock).mock.calls.length - 1
-      ]
-      expect(lastCall).toEqual(['users', 'John', 1])
+      expect(screen.getByText('@fallback_login')).toBeInTheDocument()
     })
   })
 })

@@ -1,7 +1,7 @@
+import { useSearchPage } from 'hooks/useSearchPage'
 import { useNavigate } from 'react-router-dom'
-import FontAwesomeIconWrapper from 'lib/FontAwesomeIconWrapper'
-import { useSearchPage } from 'lib/hooks/useSearchPage'
-import { user } from 'lib/types'
+import { user } from 'types/user'
+import FontAwesomeIconWrapper from 'wrappers/FontAwesomeIconWrapper'
 import SearchPageLayout from 'components/SearchPageLayout'
 import UserCard from 'components/UserCard'
 
@@ -22,7 +22,7 @@ const UsersPage = () => {
   const navigate = useNavigate()
 
   const handleButtonClick = (user: user) => {
-    navigate(`/community/users/${user.idx_key}`)
+    navigate(`/community/users/${user.key}`)
   }
 
   const renderUserCard = (user: user) => {
@@ -34,9 +34,9 @@ const UsersPage = () => {
 
     return (
       <UserCard
-        avatar={user.idx_avatar_url}
-        name={user.idx_name}
-        company={user.idx_company}
+        avatar={user.avatar_url}
+        name={user.name || `@${user.login}`}
+        company={user.company}
         button={SubmitButton}
       />
     )
@@ -44,6 +44,7 @@ const UsersPage = () => {
 
   return (
     <SearchPageLayout
+      indexName="users"
       isLoaded={isLoaded}
       totalPages={totalPages}
       currentPage={currentPage}
@@ -54,7 +55,7 @@ const UsersPage = () => {
       searchPlaceholder="Search for OWASP users..."
     >
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {users && users.map((user) => <div key={user.idx_key}>{renderUserCard(user)}</div>)}
+        {users && users.map((user) => <div key={user.key}>{renderUserCard(user)}</div>)}
       </div>
     </SearchPageLayout>
   )

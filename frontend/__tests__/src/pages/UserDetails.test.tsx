@@ -5,11 +5,11 @@ import UserDetailsPage from 'pages/UserDetails'
 import '@testing-library/jest-dom'
 
 // Mock the Algolia-related modules
-jest.mock('lib/algoliaClient', () => ({
+jest.mock('utils/helpers/algoliaClient', () => ({
   createAlgoliaClient: jest.fn(),
 }))
 
-jest.mock('lib/api', () => ({
+jest.mock('api/fetchAlgoliaData', () => ({
   fetchAlgoliaData: jest.fn(),
   removeIdxPrefix: (obj: unknown) => obj,
 }))
@@ -31,7 +31,7 @@ const mockUser = {
   followers_count: 10,
   following_count: 5,
   public_repositories_count: 3,
-  created_at: '2020-01-01T00:00:00Z',
+  created_at: '1221777448',
 }
 
 const renderWithRouter = (ui: React.ReactElement) => {
@@ -45,7 +45,7 @@ const renderWithRouter = (ui: React.ReactElement) => {
 }
 
 describe('UserDetailsPage', () => {
-  const { fetchAlgoliaData } = require('lib/api')
+  const { fetchAlgoliaData } = require('api/fetchAlgoliaData')
 
   beforeEach(() => {
     fetchAlgoliaData.mockReset()
@@ -80,10 +80,10 @@ describe('UserDetailsPage', () => {
     expect(screen.getByText(mockUser.bio)).toBeInTheDocument()
     expect(screen.getByText(mockUser.company)).toBeInTheDocument()
     expect(screen.getByText(mockUser.location)).toBeInTheDocument()
-    expect(screen.getByText('Joined January 1, 2020')).toBeInTheDocument()
+    expect(screen.getByText(`Joined September 18, 2008`)).toBeInTheDocument()
   })
 
-  test('renders error message when user does not exist', async () => {
+  test('renders "User not found" message when user does not exist', async () => {
     fetchAlgoliaData.mockResolvedValue({ hits: [] })
 
     await act(async () => {
@@ -92,6 +92,21 @@ describe('UserDetailsPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('User not found')).toBeInTheDocument()
+    })
+  })
+  test('logs error to logger when fetchUserData fails', async () => {
+    const { fetchAlgoliaData } = require('api/fetchAlgoliaData')
+    const logger = require('utils/logger')
+    logger.error.mockClear()
+
+    fetchAlgoliaData.mockRejectedValueOnce(new Error('Test fetch error'))
+
+    await act(async () => {
+      renderWithRouter(<UserDetailsPage />)
+    })
+
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(expect.any(Error))
     })
   })
 })

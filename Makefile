@@ -1,13 +1,15 @@
 include backend/Makefile
+include cspell/Makefile
 include frontend/Makefile
+include schema/Makefile
 
 build:
 	@docker compose build
 
 check: \
 	pre-commit \
-	format-frontend-code \
-	lint-frontend-code
+	check-frontend \
+	spellcheck
 
 pre-commit:
 	@pre-commit run -a

@@ -2,8 +2,9 @@
 
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
+from django.conf import settings
 
-from apps.common.index import IndexBase
+from apps.common.index import IS_LOCAL_BUILD, LOCAL_INDEX_LIMIT, IndexBase
 from apps.owasp.models.project import Project
 
 
@@ -19,6 +20,9 @@ class ProjectIndex(AlgoliaIndex, IndexBase):
         "idx_custom_tags",
         "idx_description",
         "idx_forks_count",
+        "idx_issues",
+        "idx_issues_count",
+        "idx_is_active",
         "idx_key",
         "idx_languages",
         "idx_leaders",
@@ -26,8 +30,10 @@ class ProjectIndex(AlgoliaIndex, IndexBase):
         "idx_level",
         "idx_name",
         "idx_organizations",
-        "idx_repository_descriptions",
-        "idx_repository_names",
+        "idx_releases",
+        "idx_releases_count",
+        "idx_repositories",
+        "idx_repositories_count",
         "idx_stars_count",
         "idx_summary",
         "idx_tags",
@@ -41,6 +47,9 @@ class ProjectIndex(AlgoliaIndex, IndexBase):
     settings = {
         "attributesForFaceting": [
             "filterOnly(idx_key)",
+            "idx_name",
+            "idx_tags",
+            "idx_repositories.name",
         ],
         "indexLanguages": ["en"],
         "customRanking": [
@@ -61,11 +70,12 @@ class ProjectIndex(AlgoliaIndex, IndexBase):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_repository_descriptions, idx_repository_names)",
+            "unordered(idx_repositories.description, idx_repositories.name)",
             "unordered(idx_custom_tags, idx_languages, idx_tags, idx_topics)",
             "unordered(idx_description)",
             "unordered(idx_companies, idx_organizations)",
-            "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
+            "unordered(idx_leaders)",
+            "unordered(idx_top_contributors.login, idx_top_contributors.name)",
             "unordered(idx_level)",
         ],
     }
@@ -74,12 +84,34 @@ class ProjectIndex(AlgoliaIndex, IndexBase):
 
     def get_queryset(self):
         """Get queryset."""
-        return Project.objects.prefetch_related(
+        qs = Project.objects.prefetch_related(
             "organizations",
             "repositories",
         )
+        return qs[:LOCAL_INDEX_LIMIT] if IS_LOCAL_BUILD else qs
 
     @staticmethod
     def update_synonyms():
         """Update synonyms."""
-        ProjectIndex.reindex_synonyms("owasp", "projects")
+        return ProjectIndex.reindex_synonyms("owasp", "projects")
+
+    @staticmethod
+    def configure_replicas():
+        """Configure the settings for project replicas."""
+        env = settings.ENVIRONMENT.lower()
+        client = IndexBase.get_client()
+        replicas = {
+            f"{env}_projects_name_asc": ["asc(idx_name)"],
+            f"{env}_projects_name_desc": ["desc(idx_name)"],
+            f"{env}_projects_stars_count_asc": ["asc(idx_stars_count)"],
+            f"{env}_projects_stars_count_desc": ["desc(idx_stars_count)"],
+            f"{env}_projects_contributors_count_asc": ["asc(idx_contributors_count)"],
+            f"{env}_projects_contributors_count_desc": ["desc(idx_contributors_count)"],
+            f"{env}_projects_forks_count_asc": ["asc(idx_forks_count)"],
+            f"{env}_projects_forks_count_desc": ["desc(idx_forks_count)"],
+        }
+
+        client.set_settings(f"{env}_projects", {"replicas": list(replicas.keys())})
+
+        for replica_name, ranking in replicas.items():
+            client.set_settings(replica_name, {"ranking": ranking})

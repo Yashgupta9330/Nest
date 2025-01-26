@@ -1,6 +1,8 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState, useCallback } from 'react'
-import { footerSections, Section } from 'utils/constants'
+import { Section } from 'types/section'
+import { footerSections } from 'utils/constants'
 
 export default function Footer() {
   // State to keep track of the open section in the footer
@@ -13,15 +15,15 @@ export default function Footer() {
   }, [])
 
   return (
-    <footer className="mt-auto w-full border-t bg-slate-200 xl:max-w-full dark:bg-slate-800">
-      <div className="grid w-full place-content-center gap-12 px-4 py-4 text-slate-800 md:py-8 dark:text-slate-200">
+    <footer className="mt-auto w-full border-t bg-slate-200 dark:bg-slate-800 xl:max-w-full">
+      <div className="grid w-full place-content-center gap-12 px-4 py-4 text-slate-800 dark:text-slate-200 md:py-8">
         <div className="grid w-full sm:grid-cols-2 sm:gap-20 md:grid-cols-4">
           {/* Iterate over footerSections to render each section */}
           {footerSections.map((section: Section) => (
             <div key={section.title} className="space-y-4">
               <button
                 onClick={() => toggleSection(section.title)}
-                className="flex w-full items-center justify-between text-left text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-slate-400 lg:cursor-default lg:focus:ring-0"
+                className="flex w-full items-center justify-between text-left text-lg font-semibold focus:outline-none focus:ring-slate-400 lg:cursor-default"
                 aria-expanded={openSection === section.title}
                 aria-controls={`footer-section-${section.title}`}
               >
@@ -29,9 +31,9 @@ export default function Footer() {
                 {/* Icon to indicate open/close state */}
                 <span className="transition-transform duration-200 lg:hidden">
                   {openSection === section.title ? (
-                    <ChevronUp className="h-5 w-5" />
+                    <FontAwesomeIcon icon={faChevronUp} className="h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-5 w-5" />
+                    <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4" />
                   )}
                 </span>
               </button>

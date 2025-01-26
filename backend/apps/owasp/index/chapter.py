@@ -3,6 +3,7 @@
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
 
+from apps.common.index import IS_LOCAL_BUILD, LOCAL_INDEX_LIMIT
 from apps.owasp.models.chapter import Chapter
 
 
@@ -15,6 +16,7 @@ class ChapterIndex(AlgoliaIndex):
     fields = (
         "idx_country",
         "idx_created_at",
+        "idx_is_active",
         "idx_key",
         "idx_leaders",
         "idx_name",
@@ -34,6 +36,9 @@ class ChapterIndex(AlgoliaIndex):
     settings = {
         "attributesForFaceting": [
             "filterOnly(idx_key)",
+            "idx_country",
+            "idx_name",
+            "idx_tags",
         ],
         "indexLanguages": ["en"],
         "customRanking": [
@@ -52,7 +57,8 @@ class ChapterIndex(AlgoliaIndex):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
+            "unordered(idx_leaders)",
+            "unordered(idx_top_contributors.login, idx_top_contributors.name)",
             "unordered(idx_suggested_location, idx_country, idx_region, idx_postal_code)",
             "unordered(idx_tags)",
         ],
@@ -62,6 +68,7 @@ class ChapterIndex(AlgoliaIndex):
 
     def get_queryset(self):
         """Get queryset."""
-        return Chapter.active_chapters.select_related(
+        qs = Chapter.active_chapters.select_related(
             "owasp_repository",
         )
+        return qs[:LOCAL_INDEX_LIMIT] if IS_LOCAL_BUILD else qs

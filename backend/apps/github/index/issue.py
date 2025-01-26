@@ -3,7 +3,7 @@
 from algoliasearch_django import AlgoliaIndex
 from algoliasearch_django.decorators import register
 
-from apps.common.index import IndexBase
+from apps.common.index import IS_LOCAL_BUILD, LOCAL_INDEX_LIMIT, IndexBase
 from apps.github.models.issue import Issue
 
 
@@ -39,6 +39,13 @@ class IssueIndex(AlgoliaIndex, IndexBase):
     )
 
     settings = {
+        "attributesForFaceting": [
+            "idx_title",
+            "idx_project_name",
+            "idx_repository_name",
+            "idx_project_tags",
+            "idx_repository_topics",
+        ],
         "attributeForDistinct": "idx_project_name",
         "minProximity": 4,
         "indexLanguages": ["en"],
@@ -74,7 +81,7 @@ class IssueIndex(AlgoliaIndex, IndexBase):
 
     def get_queryset(self):
         """Get queryset."""
-        return Issue.open_issues.assignable.select_related(
+        qs = Issue.open_issues.assignable.select_related(
             "repository",
         ).prefetch_related(
             "assignees",
@@ -82,7 +89,9 @@ class IssueIndex(AlgoliaIndex, IndexBase):
             "repository__project_set",
         )
 
+        return qs[:LOCAL_INDEX_LIMIT] if IS_LOCAL_BUILD else qs
+
     @staticmethod
     def update_synonyms():
         """Update synonyms."""
-        IssueIndex.reindex_synonyms("github", "issues")
+        return IssueIndex.reindex_synonyms("github", "issues")

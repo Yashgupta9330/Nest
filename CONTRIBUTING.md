@@ -25,12 +25,17 @@ Before contributing, ensure you have the following installed:
     1. You must use WSL terminal (not Windows PowerShell) otherwise there is no guarantee that Nest development environment will be set up as intended. Please do not report any issues if you use PowerShell for running the commands -- it's not the intended way to run Nest locally so the errors will not be accepted as bugs.
     1. Ensure WSL integration is enabled in Docker Desktop settings by checking `Resources -- WSL integration` in Docker application settings.
 
+## Starring the Project
+
+[![GitHub stars](https://img.shields.io/github/stars/OWASP/Nest?style=social)](https://github.com/OWASP/Nest)
+
+## Forking the Repository
+
+[![GitHub forks](https://img.shields.io/github/forks/OWASP/Nest?style=social)](https://github.com/OWASP/Nest/fork)
+
 ## Setting up the Project
 
 Follow these steps to set up the OWASP Nest application:
-
-1. **Fork the Repository**:
-    - Fork <https://github.com/OWASP/Nest> repository using "Fork" button
 
 1. **Clone the Repository**:
     - Clone the repository code from your GitHub account using the following command:
@@ -81,6 +86,7 @@ Follow these steps to set up the OWASP Nest application:
       ```plaintext
       DJANGO_ALGOLIA_APPLICATION_ID=<your-algolia-application-id>
       DJANGO_ALGOLIA_WRITE_API_KEY=<your-algolia-write-api-key>
+      DJANGO_ALGOLIA_APPLICATION_REGION=<your-algolia-application-region> // eu or us
       ```
 
     - Update your `frontend/.env` file with the following keys from your Algolia app (use **search** API key for frontend):
@@ -153,6 +159,10 @@ If you plan to fetch GitHub OWASP data locally, follow these additional steps:
 
 #### NestBot Development
 
+:exclamation: **Never install your development Slack application in the OWASP Slack workspace.
+:exclamation: Doing so will interfere with OWASP Nest functionality and trigger unnecessary notifications to Slack admins.
+:exclamation: Always use a different workspace (create your own if needed).**
+
 To setup NestBot development environment, follow these steps:
 
 1. **Set Up ngrok**:
@@ -191,10 +201,8 @@ To setup NestBot development environment, follow these steps:
       DJANGO_SLACK_SIGNING_SECRET=<your-slack-signing-secret>
       ```
 
-1. **Set up Slack slash commands**:
-    - Add the slash commands (`/contribute`, `/gsoc`, `/owasp`) to your Slack application in `Features -- Slash Commands` section using `http://<your-static-domain>/integrations/slack/events/` as the `Request URL`.
-    - Configure event subscriptions in `Features -- Event Subscriptions` section to use your `http://<your-static-domain>/integrations/slack/events/` URL.
-    Make sure `member_joined_channel` and `team_join` events are included for bot events.
+1. **Set up Slack application**:
+    - Configure your Slack application using [NestBot manifest file](https://github.com/OWASP/Nest/blob/main/backend/apps/slack/MANIFEST.yaml) (copy its contents and save it into`Settings -- App Manifest`). You'll need to replace slash commands endpoint with your ngrok static domain path.
     - Reinstall your Slack application after making the changes in `Features -- OAuth & Permissions` section.
 
 ## Code Quality Checks
@@ -284,6 +292,18 @@ git checkout -b feature/my-feature-name
 
 - Address feedback from maintainers during code review.
 - Once approved, your PR will be merged into the main branch.
+
+## Troubleshooting
+
+- **"Unexpected character" error during application execution or Docker image building**
+  This error is usually caused by incorrect encoding of `.env` files.
+
+  - Open the `.env` files in a text editor (e.g., VS Code) and save them as "UTF-8 without BOM."
+  - Restart the application with `make run` and verify the error is resolved.
+
+  Tips:
+  - Ensure consistent file encoding using a code editor or linter.
+  - If the issue persists, check the project's documentation or issue tracker.
 
 ## Code of Conduct
 

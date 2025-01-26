@@ -22,6 +22,11 @@ class ChapterIndexMixin(GenericEntityMixin):
         return self.latitude, self.longitude
 
     @property
+    def idx_is_active(self):
+        """Return active status for indexing."""
+        return self.is_active
+
+    @property
     def idx_key(self):
         """Return key for indexing."""
         return self.key.replace("www-chapter-", "")
@@ -49,7 +54,7 @@ class ChapterIndexMixin(GenericEntityMixin):
     @property
     def idx_suggested_location(self):
         """Return suggested location for indexing."""
-        return self.suggested_location
+        return self.suggested_location if self.suggested_location != "None" else ""
 
     @property
     def idx_top_contributors(self):

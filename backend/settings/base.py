@@ -19,7 +19,8 @@ class Base(Configuration):
 
     ALLOWED_HOSTS = values.ListValue()
     DEBUG = False
-
+    RELEASE_VERSION = values.Value(environ_name="RELEASE_VERSION")
+    SENTRY_DSN = values.SecretValue(environ_name="SENTRY_DSN")
     SITE_NAME = "localhost"
     SITE_URL = "http://localhost:8000"
 
@@ -35,6 +36,7 @@ class Base(Configuration):
     THIRD_PARTY_APPS = (
         "algoliasearch_django",
         "corsheaders",
+        "graphene_django",
         "rest_framework",
         "storages",
     )
@@ -48,6 +50,24 @@ class Base(Configuration):
     )
 
     INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+            },
+        },
+        "loggers": {
+            "django": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": True,
+            },
+        },
+    }
 
     MIDDLEWARE = [
         "corsheaders.middleware.CorsMiddleware",
@@ -91,6 +111,7 @@ class Base(Configuration):
     WSGI_APPLICATION = "wsgi.application"
 
     ALGOLIA_APPLICATION_ID = values.SecretValue(environ_name="ALGOLIA_APPLICATION_ID")
+    ALGOLIA_APPLICATION_REGION = values.SecretValue(environ_name="ALGOLIA_APPLICATION_REGION")
     ALGOLIA_WRITE_API_KEY = values.SecretValue(environ_name="ALGOLIA_WRITE_API_KEY")
 
     ALGOLIA = {
@@ -115,6 +136,10 @@ class Base(Configuration):
             "HOST": values.Value(environ_name="DB_HOST"),
             "PORT": values.Value(environ_name="DB_PORT"),
         },
+    }
+
+    GRAPHENE = {
+        "SCHEMA": "settings.graphql.schema",
     }
 
     # Password validation

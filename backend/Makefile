@@ -35,7 +35,9 @@ github-update-project-related-repositories:
 index-data:
 	@echo "Indexing Nest data"
 	@CMD="poetry run python manage.py algolia_reindex" $(MAKE) exec-backend-command
+	@CMD="poetry run python manage.py algolia_update_replicas" $(MAKE) exec-backend-command
 	@CMD="poetry run python manage.py algolia_update_synonyms" $(MAKE) exec-backend-command
+	@CMD="poetry run python manage.py algolia_update_suggestions" $(MAKE) exec-backend-command
 
 load-data:
 	@echo "Loading Nest data"
@@ -99,8 +101,8 @@ shell-backend:
 sync-data: update-data enrich-data index-data
 
 test-backend:
-	@docker build -f backend/Dockerfile.test backend -t nest-backend-test 2>/dev/null
-	@docker run -e DJANGO_CONFIGURATION=Test nest-backend-test poetry run pytest
+	@docker build -f backend/Dockerfile.test backend -t nest-test-backend
+	@docker run -e DJANGO_CONFIGURATION=Test nest-test-backend poetry run pytest
 
 update-data: \
 	github-update-owasp-organization \

@@ -72,11 +72,9 @@ class Chapter(
     def is_indexable(self):
         """Chapters to index."""
         return (
-            self.is_active
-            and self.latitude is not None
+            self.latitude is not None
             and self.longitude is not None
             and not self.owasp_repository.is_empty
-            and not self.owasp_repository.is_archived
         )
 
     def from_github(self, repository):
@@ -102,9 +100,11 @@ class Chapter(
 
     def generate_geo_location(self):
         """Add latitude and longitude data."""
-        location = get_location_coordinates(self.suggested_location) or get_location_coordinates(
-            self.get_geo_string()
-        )
+        location = None
+        if self.suggested_location and self.suggested_location != "None":
+            location = get_location_coordinates(self.suggested_location)
+        if location is None:
+            location = get_location_coordinates(self.get_geo_string())
 
         if location:
             self.latitude = location.latitude
@@ -112,16 +112,16 @@ class Chapter(
 
     def generate_suggested_location(self, open_ai=None, max_tokens=100):
         """Generate project summary."""
-        if not self.is_active:
-            return
-
         if not (prompt := Prompt.get_owasp_chapter_suggested_location()):
             return
 
         open_ai = open_ai or OpenAi()
         open_ai.set_input(self.get_geo_string())
         open_ai.set_max_tokens(max_tokens).set_prompt(prompt)
-        self.suggested_location = open_ai.complete() or ""
+        suggested_location = open_ai.complete()
+        self.suggested_location = (
+            suggested_location if suggested_location and suggested_location != "None" else ""
+        )
 
     def get_geo_string(self, include_name=True):
         """Return geo string."""
