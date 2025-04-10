@@ -1,12 +1,13 @@
-"""OWASP app commettee model."""
+"""OWASP app committee model."""
 
 from functools import lru_cache
 
 from django.db import models
 
+from apps.common.index import IndexBase
 from apps.common.models import BulkSaveModel, TimestampedModel
 from apps.core.models.prompt import Prompt
-from apps.owasp.models.common import GenericEntityModel, RepositoryBasedEntityModel
+from apps.owasp.models.common import RepositoryBasedEntityModel
 from apps.owasp.models.managers.committee import ActiveCommitteeManager
 from apps.owasp.models.mixins.committee import CommitteeIndexMixin
 
@@ -14,7 +15,6 @@ from apps.owasp.models.mixins.committee import CommitteeIndexMixin
 class Committee(
     BulkSaveModel,
     CommitteeIndexMixin,
-    GenericEntityModel,
     RepositoryBasedEntityModel,
     TimestampedModel,
 ):
@@ -33,32 +33,37 @@ class Committee(
 
     def from_github(self, repository):
         """Update instance based on GitHub repository data."""
-        field_mapping = {
-            "description": "pitch",
-            "name": "title",
-            "tags": "tags",
-        }
-        RepositoryBasedEntityModel.from_github(self, field_mapping, repository)
-
-        if repository:
-            self.created_at = repository.created_at
-            self.updated_at = repository.updated_at
-
-        # FKs.
         self.owasp_repository = repository
+
+        RepositoryBasedEntityModel.from_github(
+            self,
+            {
+                "description": "pitch",
+                "name": "title",
+                "tags": "tags",
+            },
+        )
+
+        self.created_at = repository.created_at
+        self.updated_at = repository.updated_at
 
     def save(self, *args, **kwargs):
         """Save committee."""
-        if not self.summary:
-            self.generate_summary(prompt=Prompt.get_owasp_committee_summary())
+        if not self.summary and (prompt := Prompt.get_owasp_committee_summary()):
+            self.generate_summary(prompt=prompt)
 
         super().save(*args, **kwargs)
+
+    @property
+    def nest_key(self):
+        """Get Nest key."""
+        return self.key.replace("www-committee-", "")
 
     @staticmethod
     @lru_cache
     def active_committees_count():
         """Return active committees count."""
-        return Committee.active_committees.count()
+        return IndexBase.get_total_count("committees")
 
     @staticmethod
     def bulk_save(committees, fields=None):

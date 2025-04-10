@@ -1,15 +1,24 @@
 """OWASP app chapter search API."""
 
 from algoliasearch_django import raw_search
-from django.http import JsonResponse
 
-from apps.common.geocoding import get_ip_coordinates
-from apps.common.utils import get_user_ip
 from apps.owasp.models.chapter import Chapter
 
 
-def get_chapters(query, attributes=None, limit=25, meta=None):
-    """Return chapters relevant to a search query."""
+def get_chapters(query, attributes=None, limit=25, page=1, searchable_attributes=None):
+    """Return chapters relevant to a search query.
+
+    Args:
+        query (str): The search query string.
+        attributes (list, optional): List of attributes to retrieve.
+        limit (int, optional): Number of results per page.
+        page (int, optional): Page number for pagination.
+        searchable_attributes (list, optional): Attributes to restrict the search to.
+
+    Returns:
+        dict: Search results containing chapters matching the query.
+
+    """
     params = {
         "attributesToHighlight": [],
         "attributesToRetrieve": attributes
@@ -25,24 +34,11 @@ def get_chapters(query, attributes=None, limit=25, meta=None):
         ],
         "hitsPerPage": limit,
         "minProximity": 4,
+        "page": page - 1,
         "typoTolerance": "min",
     }
 
-    if coordinates := get_ip_coordinates(get_user_ip(meta)):
-        params["aroundLatLng"] = f"{coordinates[0]},{coordinates[1]}"
+    if searchable_attributes:
+        params["restrictSearchableAttributes"] = searchable_attributes
 
-    return raw_search(Chapter, query, params)["hits"]
-
-
-def chapters(request):
-    """Search chapters API endpoint."""
-    return JsonResponse(
-        {
-            "active_chapters_count": Chapter.active_chapters_count(),
-            "chapters": get_chapters(
-                request.GET.get("q", ""),
-                meta=request.META,
-            ),
-        },
-        safe=False,
-    )
+    return raw_search(Chapter, query, params)

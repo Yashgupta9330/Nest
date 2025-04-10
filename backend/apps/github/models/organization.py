@@ -1,5 +1,7 @@
 """Github app organization model."""
 
+from functools import lru_cache
+
 from django.db import models
 
 from apps.common.models import BulkSaveModel, TimestampedModel
@@ -23,11 +25,21 @@ class Organization(
     description = models.CharField(verbose_name="Description", max_length=1000, default="")
 
     def __str__(self):
-        """Organization human readable representation."""
+        """Return a human-readable representation of the organization.
+
+        Returns
+            str: The name of the organization.
+
+        """
         return f"{self.name}"
 
     def from_github(self, gh_organization):
-        """Update instance based on GitHub organization data."""
+        """Update the instance based on GitHub organization data.
+
+        Args:
+            gh_organization (github.Organization.Organization): The GitHub organization object.
+
+        """
         super().from_github(gh_organization)
 
         field_mapping = {
@@ -40,6 +52,12 @@ class Organization(
             if value is not None:
                 setattr(self, model_field, value)
 
+    @lru_cache
+    @staticmethod
+    def get_logins():
+        """Retrieve all organization logins."""
+        return set(Organization.objects.values_list("login", flat=True))
+
     @staticmethod
     def bulk_save(organizations):
         """Bulk save organizations."""
@@ -47,7 +65,16 @@ class Organization(
 
     @staticmethod
     def update_data(gh_organization, save=True):
-        """Update organization data."""
+        """Update organization data.
+
+        Args:
+            gh_organization (github.Organization.Organization): The GitHub organization object.
+            save (bool, optional): Whether to save the instance.
+
+        Returns:
+            Organization: The updated or created organization instance.
+
+        """
         organization_node_id = Organization.get_node_id(gh_organization)
         try:
             organization = Organization.objects.get(node_id=organization_node_id)

@@ -1,3 +1,7 @@
 """Common app constants."""
 
-DAY_IN_SECONDS = 86400
+NL = "\n"
+OWASP_BLOG_URL = "https://owasp.org/blog"
+OWASP_NEWS_URL = "https://owasp.org/news"
+OWASP_WEBSITE_URL = "https://owasp.org"
+TAB = "\t"

@@ -5,26 +5,26 @@ from functools import lru_cache
 from django.db import models
 
 from apps.common.geocoding import get_location_coordinates
+from apps.common.index import IndexBase
 from apps.common.models import BulkSaveModel, TimestampedModel
 from apps.common.open_ai import OpenAi
 from apps.common.utils import join_values
 from apps.core.models.prompt import Prompt
-from apps.owasp.models.common import GenericEntityModel, RepositoryBasedEntityModel
-from apps.owasp.models.managers.chapter import ActiveChaptertManager
+from apps.owasp.models.common import RepositoryBasedEntityModel
+from apps.owasp.models.managers.chapter import ActiveChapterManager
 from apps.owasp.models.mixins.chapter import ChapterIndexMixin
 
 
 class Chapter(
     BulkSaveModel,
     ChapterIndexMixin,
-    GenericEntityModel,
     RepositoryBasedEntityModel,
     TimestampedModel,
 ):
     """Chapter model."""
 
     objects = models.Manager()
-    active_chapters = ActiveChaptertManager()
+    active_chapters = ActiveChapterManager()
 
     class Meta:
         db_table = "owasp_chapters"
@@ -61,68 +61,84 @@ class Chapter(
         """Chapter human readable representation."""
         return f"{self.name or self.key}"
 
+    @property
+    def nest_key(self):
+        """Get Nest key."""
+        return self.key.replace("www-chapter-", "")
+
     @staticmethod
     @lru_cache
     def active_chapters_count():
         """Return active chapters count."""
-        return Chapter.active_chapters.count()
-
-    @property
-    def is_indexable(self):
-        """Chapters to index."""
-        return (
-            self.is_active
-            and self.latitude is not None
-            and self.longitude is not None
-            and not self.owasp_repository.is_empty
-            and not self.owasp_repository.is_archived
-        )
+        return IndexBase.get_total_count("chapters", search_filters="idx_is_active:true")
 
     def from_github(self, repository):
-        """Update instance based on GitHub repository data."""
-        field_mapping = {
-            "country": "country",
-            "currency": "currency",
-            "level": "level",
-            "meetup_group": "meetup-group",
-            "name": "title",
-            "postal_code": "postal-code",
-            "region": "region",
-            "tags": "tags",
-        }
-        RepositoryBasedEntityModel.from_github(self, field_mapping, repository)
+        """Update instance based on GitHub repository data.
 
-        if repository:
-            self.created_at = repository.created_at
-            self.updated_at = repository.updated_at
+        Args:
+            repository (github.Repository): The GitHub repository instance.
 
-        # FKs.
+        """
         self.owasp_repository = repository
 
-    def generate_geo_location(self):
-        """Add latitude and longitude data."""
-        location = get_location_coordinates(self.suggested_location) or get_location_coordinates(
-            self.get_geo_string()
+        RepositoryBasedEntityModel.from_github(
+            self,
+            {
+                "country": "country",
+                "currency": "currency",
+                "level": "level",
+                "meetup_group": "meetup-group",
+                "name": "title",
+                "postal_code": "postal-code",
+                "region": "region",
+                "tags": "tags",
+            },
         )
+
+        self.created_at = repository.created_at
+        self.updated_at = repository.updated_at
+
+    def generate_geo_location(self):
+        """Add latitude and longitude data based on suggested location or geo string."""
+        location = None
+        if self.suggested_location and self.suggested_location != "None":
+            location = get_location_coordinates(self.suggested_location)
+        if location is None:
+            location = get_location_coordinates(self.get_geo_string())
 
         if location:
             self.latitude = location.latitude
             self.longitude = location.longitude
 
     def generate_suggested_location(self, open_ai=None, max_tokens=100):
-        """Generate project summary."""
-        if not self.is_active:
+        """Generate a suggested location using OpenAI.
+
+        Args:
+            open_ai (OpenAi, optional): An instance of OpenAi.
+            max_tokens (int, optional): Maximum tokens for the OpenAI prompt.
+
+        """
+        if not (prompt := Prompt.get_owasp_chapter_suggested_location()):
             return
 
         open_ai = open_ai or OpenAi()
         open_ai.set_input(self.get_geo_string())
-        open_ai.set_max_tokens(max_tokens).set_prompt(
-            Prompt.get_owasp_chapter_suggested_location()
+        open_ai.set_max_tokens(max_tokens).set_prompt(prompt)
+        suggested_location = open_ai.complete()
+        self.suggested_location = (
+            suggested_location if suggested_location and suggested_location != "None" else ""
         )
-        self.suggested_location = open_ai.complete() or ""
 
     def get_geo_string(self, include_name=True):
-        """Return geo string."""
+        """Return a geo string for the chapter.
+
+        Args:
+            include_name (bool, optional): Whether to include the chapter name.
+
+        Returns:
+            str: The geo string.
+
+        """
         return join_values(
             (
                 self.name.replace("OWASP", "").strip() if include_name else "",
@@ -133,7 +149,13 @@ class Chapter(
         )
 
     def save(self, *args, **kwargs):
-        """Save chapter."""
+        """Save the chapter instance.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        """
         if not self.suggested_location:
             self.generate_suggested_location()
 
@@ -144,12 +166,28 @@ class Chapter(
 
     @staticmethod
     def bulk_save(chapters, fields=None):
-        """Bulk save chapters."""
+        """Bulk save chapters.
+
+        Args:
+            chapters (list[Chapter]): List of Chapter instances to save.
+            fields (list[str], optional): List of fields to update.
+
+        """
         BulkSaveModel.bulk_save(Chapter, chapters, fields=fields)
 
     @staticmethod
     def update_data(gh_repository, repository, save=True):
-        """Update chapter data."""
+        """Update chapter data from GitHub repository.
+
+        Args:
+            gh_repository (github.Repository): The GitHub repository instance.
+            repository (github.Repository): The repository data to update from.
+            save (bool, optional): Whether to save the instance.
+
+        Returns:
+            Chapter: The updated Chapter instance.
+
+        """
         key = gh_repository.name.lower()
         try:
             chapter = Chapter.objects.get(key=key)

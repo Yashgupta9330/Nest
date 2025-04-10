@@ -1,64 +1,113 @@
-export interface Link {
-    text: string;
-    href: string;
-    isSpan?: boolean;
-  }
+import { faGithub, faSlack, faBluesky } from '@fortawesome/free-brands-svg-icons'
+import { Link } from 'types/link'
+import { Section } from 'types/section'
 
 export const headerLinks: Link[] = [
   {
-      text: 'Contribute',
-      href: '/projects/contribute'
+    text: 'Community',
+    submenu: [
+      { text: 'Chapters', href: '/chapters' },
+      { text: 'Snapshots', href: '/community/snapshots' },
+      { text: 'Users', href: '/community/users' },
+    ],
   },
   {
-      text: 'Projects',
-      href: '/projects'
+    text: 'Projects',
+    href: '/projects',
   },
   {
-      text: 'Chapters',
-      href: '/chapters'
+    text: 'Contribute',
+    href: '/projects/contribute',
   },
   {
-      text: 'Committees',
-      href: '/committees'
-  }
-];
+    text: 'About',
+    href: '/about',
+  },
+]
 
-  export interface Section {
-    title: string;
-    links: Link[];
-  }
+export const footerIcons = [
+  {
+    icon: faBluesky,
+    href: 'https://bsky.app/profile/nest.owasp.org',
+    label: 'Bluesky',
+  },
+  {
+    icon: faGithub,
+    href: 'https://github.com/owasp/nest',
+    label: 'GitHub',
+  },
+  {
+    icon: faSlack,
+    href: 'https://owasp.slack.com/archives/project-nest',
+    label: 'Slack',
+  },
+]
 
-  export const footerSections: Section[] = [
-    {
-      title: 'About OWASP',
-      links: [
-        { text: 'Our Mission', href: '#' },
-        { text: 'Team', href: '#' },
-        { text: 'Careers', href: '#' },
-      ],
-    },
-    {
-      title: 'Resources',
-      links: [
-        { text: 'Contribute', href: 'https://nest.owasp.dev/projects/contribute/' },
-        { text: 'Projects', href: 'https://nest.owasp.dev/projects/' },
-        { text: 'Chapters', href: 'https://nest.owasp.dev/chapters/' },
-      ],
-    },
-    {
-      title: 'Community',
-      links: [
-        { text: 'Committees', href: 'https://nest.owasp.dev/committees/' },
-        { text: 'Events', href: '#' },
-        { text: 'Forum', href: '#' },
-      ],
-    },
-    {
-      title: 'Contact',
-      links: [
-        { text: 'Locations', href: '#', isSpan: true },
-        { text: 'Support', href: '#' },
-        { text: 'Contact Us', href: 'https://owasp.org/contact/' },
-      ],
-    },
-  ];
+export const footerSections: Section[] = [
+  {
+    title: 'OWASP Nest',
+    links: [
+      { text: 'About', href: '/about' },
+      { text: 'Contribute', href: 'https://github.com/OWASP/Nest/blob/main/CONTRIBUTING.md' },
+      {
+        text: 'GSoC 2025',
+        href: 'https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas#owasp-nest',
+      },
+      {
+        text: 'Sponsor',
+        href: 'https://owasp.org/donate/?reponame=www-project-nest&title=OWASP+Nest',
+      },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { text: 'Chapters', href: '/chapters/' },
+      {
+        text: 'Contribute',
+        href: '/projects/contribute/',
+      },
+      { text: 'Committees', href: '/committees/' },
+      { text: 'Projects', href: '/projects/' },
+    ],
+  },
+  {
+    title: 'Community',
+    links: [
+      { text: 'Community Content', href: 'https://owasp.org/www-community/' },
+      { text: 'Google Summer of Code', href: 'https://owasp.org/gsoc' },
+      {
+        text: 'Start a Local Chapter',
+        href: 'https://owasporg.atlassian.net/servicedesk/customer/portal/8/group/20/create/90?src=-1419759666',
+      },
+      {
+        text: 'Start a New Project',
+        href: 'https://owasporg.atlassian.net/servicedesk/customer/portal/7/create/70?src=-1419759666',
+      },
+    ],
+  },
+  {
+    title: 'OWASP',
+    links: [
+      { text: 'About', href: 'https://owasp.org/about/' },
+      { text: 'Contact', href: 'https://owasp.org/contact/' },
+      { text: 'Events', href: 'https://owasp.glueup.com/organization/6727/events/' },
+      { text: 'Team', href: 'https://owasp.org/corporate/' },
+    ],
+  },
+]
+
+export const tooltipStyle = {
+  borderRadius: '8px',
+  zIndex: 100,
+}
+
+export const themeToggleTooltip = {
+  backgroundColor: '#28282B',
+  color: 'white',
+  fontSize: '0.7rem',
+  borderRadius: '6px',
+  padding: '3px 7px',
+}
+
+export const desktopViewMinWidth = 768

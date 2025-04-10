@@ -1,13 +1,11 @@
 """OWASP app chapter index."""
 
-from algoliasearch_django import AlgoliaIndex
-from algoliasearch_django.decorators import register
-
+from apps.common.index import IndexBase, register
 from apps.owasp.models.chapter import Chapter
 
 
 @register(Chapter)
-class ChapterIndex(AlgoliaIndex):
+class ChapterIndex(IndexBase):
     """Chapter index."""
 
     index_name = "chapters"
@@ -15,6 +13,8 @@ class ChapterIndex(AlgoliaIndex):
     fields = (
         "idx_country",
         "idx_created_at",
+        "idx_is_active",
+        "idx_key",
         "idx_leaders",
         "idx_name",
         "idx_postal_code",
@@ -31,6 +31,13 @@ class ChapterIndex(AlgoliaIndex):
     geo_field = "idx_geo_location"
 
     settings = {
+        "attributesForFaceting": [
+            "filterOnly(idx_is_active)",
+            "filterOnly(idx_key)",
+            "idx_country",
+            "idx_name",
+            "idx_tags",
+        ],
         "indexLanguages": ["en"],
         "customRanking": [
             "asc(idx_created_at)",
@@ -48,7 +55,8 @@ class ChapterIndex(AlgoliaIndex):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
+            "unordered(idx_leaders)",
+            "unordered(idx_top_contributors.login, idx_top_contributors.name)",
             "unordered(idx_suggested_location, idx_country, idx_region, idx_postal_code)",
             "unordered(idx_tags)",
         ],
@@ -56,8 +64,8 @@ class ChapterIndex(AlgoliaIndex):
 
     should_index = "is_indexable"
 
-    def get_queryset(self):
-        """Get queryset."""
-        return Chapter.active_chapters.prefetch_related(
+    def get_entities(self):
+        """Get entities for indexing."""
+        return Chapter.active_chapters.select_related(
             "owasp_repository",
         )

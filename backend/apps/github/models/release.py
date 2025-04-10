@@ -4,13 +4,17 @@ from django.db import models
 
 from apps.common.models import BulkSaveModel, TimestampedModel
 from apps.github.models.common import NodeModel
+from apps.github.models.mixins.release import ReleaseIndexMixin
 
 
-class Release(BulkSaveModel, NodeModel, TimestampedModel):
+class Release(BulkSaveModel, NodeModel, ReleaseIndexMixin, TimestampedModel):
     """Release model."""
 
     class Meta:
         db_table = "github_releases"
+        indexes = [
+            models.Index(fields=["-created_at"]),
+        ]
         verbose_name_plural = "Releases"
 
     name = models.CharField(verbose_name="Name", max_length=200)
@@ -25,7 +29,13 @@ class Release(BulkSaveModel, NodeModel, TimestampedModel):
     published_at = models.DateTimeField(verbose_name="Published at")
 
     # FKs.
-    author = models.ForeignKey("github.User", on_delete=models.SET_NULL, blank=True, null=True)
+    author = models.ForeignKey(
+        "github.User",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="created_releases",
+    )
     repository = models.ForeignKey(
         "github.Repository",
         on_delete=models.SET_NULL,
@@ -35,11 +45,33 @@ class Release(BulkSaveModel, NodeModel, TimestampedModel):
     )
 
     def __str__(self):
-        """User human readable representation."""
+        """Return a human-readable representation of the release.
+
+        Returns
+            str: The name of the release along with the author's name.
+
+        """
         return f"{self.name} by {self.author}"
 
+    @property
+    def summary(self):
+        """Return release summary."""
+        return f"{self.tag_name} on {self.published_at.strftime('%b %d, %Y')}"
+
+    @property
+    def url(self):
+        """Return release URL."""
+        return f"{self.repository.url}/releases/tag/{self.tag_name}"
+
     def from_github(self, gh_release, author=None, repository=None):
-        """Update instance based on GitHub release data."""
+        """Update the instance based on GitHub release data.
+
+        Args:
+            gh_release (github.Release.Release): The GitHub release object.
+            author (User, optional): The author of the release.
+            repository (Repository, optional): The repository instance.
+
+        """
         field_mapping = {
             "created_at": "created_at",
             "description": "body",
@@ -70,7 +102,18 @@ class Release(BulkSaveModel, NodeModel, TimestampedModel):
 
     @staticmethod
     def update_data(gh_release, author=None, repository=None, save=True):
-        """Update release data."""
+        """Update release data.
+
+        Args:
+            gh_release (github.Release.Release): The GitHub release object.
+            author (User, optional): The author of the release.
+            repository (Repository, optional): The repository instance.
+            save (bool, optional): Whether to save the instance.
+
+        Returns:
+            Release: The updated or created release instance.
+
+        """
         release_node_id = Release.get_node_id(gh_release)
         try:
             release = Release.objects.get(node_id=release_node_id)

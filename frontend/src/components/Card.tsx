@@ -1,127 +1,171 @@
-import { cn } from "../lib/utils";
-import { CardProps } from "../lib/constants";
-import ContributorAvatar from "./ContributorAvatar";
-import TopicBadge from "./TopicBadge";
-import ActionButton from "./ActionButton";
-import { Icons } from "./data";
-import DisplayIcon from "./DisplayIcon";
-import { Tooltip } from 'react-tooltip'
-import { tooltipStyle } from "../lib/constants";
-import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
-import FontAwesomeIconWrapper from "../lib/FontAwesomeIconWrapper";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Tooltip } from '@heroui/tooltip'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { CardProps } from 'types/card'
+import { desktopViewMinWidth } from 'utils/constants'
+import { Icons } from 'utils/data'
+import { getSocialIcon } from 'utils/urlIconMappings'
+import { cn } from 'utils/utility'
+import FontAwesomeIconWrapper from 'wrappers/FontAwesomeIconWrapper'
+import ContributorAvatar from 'components/ContributorAvatar'
+import ActionButton from './ActionButton'
+import DisplayIcon from './DisplayIcon'
+import Markdown from './MarkdownWrapper'
+
+// Initial check for mobile screen size
+const isMobileInitial = typeof window !== 'undefined' && window.innerWidth < desktopViewMinWidth
 
 const Card = ({
-    title,
-    summary,
-    level,
-    icons,
-    leaders,
-    topContributors,
-    topics,
-    button,
-    projectName,
-    projectLink,
-    languages,
-    social,
-} : CardProps) => {
+  title,
+  url,
+  summary,
+  level,
+  icons,
+  topContributors,
+  button,
+  projectName,
+  projectLink,
+  social,
+  tooltipLabel,
+}: CardProps) => {
+  const [isMobile, setIsMobile] = useState(isMobileInitial)
+
+  // Resize listener to adjust display based on screen width
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < desktopViewMinWidth
+      setIsMobile(mobile)
+    }
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
-    <div className=" w-full md:max-w-6xl  h-fit flex flex-col justify-normal items-start gap-4 md:gap-2 p-4 px-6 border border-border rounded-md ">
-      <div className=" w-full flex justify-between items-center flex-wrap gap-2 ">
-        <div className=" flex justify-center items-center gap-2 ">
-          { level && <span
-            data-tooltip-id="level-tooltip"
-            data-tooltip-content={`${level.level} project`}
-            className={cn("text-xs rounded-full w-8 h-8 flex justify-center items-center shadow ")}
-            style={{backgroundColor: level.color}}
-          >
-            <FontAwesomeIconWrapper icon={level.icon} className="text-white" />
-            </span>}
-          <a href="#">
-            <h1 className=" text-2xl font-semibold ">
+    <div className="mx-auto mb-2 mt-4 flex w-full max-w-[95%] flex-col items-start rounded-md border border-border bg-white px-4 pb-4 pl-4 dark:bg-[#212529] md:max-w-6xl">
+      <div className="mt-2 flex w-full flex-col items-start gap-4 pt-2 sm:flex-col sm:gap-4 md:pt-0">
+        <div className="flex items-center gap-3">
+          {/* Display project level badge (if available) */}
+          {level && (
+            <Tooltip
+              closeDelay={100}
+              content={`${level.level} project`}
+              id={`level-tooltip-${title}`}
+              delay={100}
+              placement="top"
+              showArrow
+            >
+              <span
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full text-xs shadow'
+                )}
+                style={{ backgroundColor: level.color }}
+              >
+                <FontAwesomeIconWrapper icon={level.icon} className="text-white" />
+              </span>
+            </Tooltip>
+          )}
+          {/* Project title and link */}
+          <Link href={url} target="_blank" rel="noopener noreferrer" className="flex-1">
+            <h1
+              className="max-w-full break-words text-base font-semibold text-blue-400 sm:break-normal sm:text-lg lg:text-2xl"
+              style={{
+                transition: 'color 0.3s ease',
+              }}
+            >
               {title}
             </h1>
-          </a>
+          </Link>
         </div>
-
-        <div className="min-w-[30%] flex justify-end items-center md:gap-8 flex-wrap ">
-            { icons && Object.keys(Icons).map((key) =>
-                icons[key] !== undefined ? (
-                    <DisplayIcon
-                        key={key}
-                        item={key}
-                        icons={icons}
-                    />
-                ) : null
+        {/* Icons associated with the project */}
+        {icons && Object.keys(Icons).some((key) => icons[key]) ? (
+          <div className="-ml-1.5 flex flex-grow">
+            {Object.keys(Icons).map((key, index) =>
+              icons[key] ? (
+                <DisplayIcon
+                  key={`${key}-${index}`}
+                  item={key}
+                  icons={Object.fromEntries(Object.entries(icons).filter(([_, value]) => value))}
+                />
+              ) : null
             )}
+          </div>
+        ) : null}
+      </div>
+      {/* Link to project name if provided */}
+      {projectName && (
+        <Link href={projectLink || ''} rel="noopener noreferrer" className="mt-2 font-medium">
+          {projectName}
+        </Link>
+      )}
+      {/* Render project summary using Markdown */}
+      <Markdown content={summary} className="py-2 pr-4 text-gray-600 dark:text-gray-300" />
+      <div
+        className={
+          social && social.length > 0
+            ? 'flex w-full flex-col gap-2 pr-4'
+            : 'flex w-full items-center justify-between'
+        }
+      >
+        {/* Render top contributors as avatars */}
+        <div className="mt-3 flex w-full flex-wrap items-center gap-2">
+          {topContributors?.map((contributor, index) => (
+            <ContributorAvatar
+              key={contributor.login || `contributor-${index}`}
+              contributor={contributor}
+              uniqueKey={index.toString()}
+            />
+          ))}
         </div>
-      </div>
-      <h2>
-        {
-            leaders &&
-            <span className=" font-bold "> { leaders.length > 1 ? "Leaders: " : "Leader: " } </span>
-        }
-        {
-            leaders &&
-            leaders.map((leader, index) => (
-                <span key={leader} className=" font-semibold "> {index!=leaders.length-1 ? `${leader},` : `${leader}`} </span>
-            ))
-        }
-      </h2>
-      <div className=" w-full flex justify-normal items-center gap-1 ">
-        {
-            topContributors && topContributors.map((contributor) => (
-                <ContributorAvatar key={contributor.login} contributor={contributor} />
-            ))
-        }
-      </div>
-       {
-        projectName &&  <a href={projectLink} target="_blank" rel="noopener noreferrer"> {projectName}</a>
-       }
-        <p className=" mr-8 text-gray-600 dark:text-gray-200 ">{summary}</p>
-        <div className=" w-full flex md:flex-row flex-col justify-between items-center ">
-            <div className=" flex flex-col justify-normal items-start gap-2 ">
-
-                <div className=" flex justify-normal items-center gap-2 ">
-                    {
-                        languages && languages.map((topic) => (
-
-                            <TopicBadge key={topic} topic={topic} tooltipLabel={`This repository uses ${topic}`} />
-
-                        ))
-
-                    }
-                </div>
-                <div className=" flex justify-normal items-center gap-2 flex-wrap ">
-                    {
-                        topics && topics.map((topic) => (
-                            <TopicBadge key={topic} topic={topic} tooltipLabel={`This project is labeled as ${topic}`} />
-                        ))
-                    }
-                </div>
-                <div className=" flex justify-normal items-center gap-2 my-2 ">
-                    {
-                        social && social.map((item) => (
-                            <a key={item.title}
-                                href={item.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className=" flex justify-center items-center gap-1 "
-                            >
-                                {/* {item.icon} */}
-                                <FontAwesomeIcon icon={item.icon as FontAwesomeIconProps['icon']} />
-                            </a>
-                        ))
-                    }
-                </div>
-            </div>
-            <ActionButton link={button.link} onClick={button.onclick}  >
-                {button.icon}
-                {button.label}
+        {!social || social.length === 0 ? (
+          <div
+            className={cn(
+              'mt-3 flex items-center pr-4',
+              isMobile && 'mt-4 w-full justify-end pr-4'
+            )}
+          >
+            <ActionButton tooltipLabel={tooltipLabel} url={button.url} onClick={button.onclick}>
+              {button.icon}
+              {button.label}
             </ActionButton>
-        </div>
-        <Tooltip id="level-tooltip" style={tooltipStyle}  />
-
-
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'flex w-full flex-wrap items-center justify-between gap-6',
+              isMobile && 'items-start'
+            )}
+          >
+            <div
+              className={cn('flex w-full items-center justify-between', isMobile && 'flex-wrap')}
+            >
+              {/* Render social links if available */}
+              {social && social.length > 0 && (
+                <div id="social" className="mt-2 flex flex-row gap-1">
+                  {social.map((item) => (
+                    <Link
+                      key={`${item.title}-${item.url}`}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2"
+                    >
+                      <FontAwesomeIcon icon={getSocialIcon(item.url)} className="h-5 w-5" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {/* Action Button */}
+              <div className="flex items-center">
+                <ActionButton tooltipLabel={tooltipLabel} url={button.url} onClick={button.onclick}>
+                  {button.icon}
+                  {button.label}
+                </ActionButton>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

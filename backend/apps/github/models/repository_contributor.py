@@ -4,15 +4,23 @@ from django.db import models
 from django.template.defaultfilters import pluralize
 
 from apps.common.models import BulkSaveModel, TimestampedModel
+from apps.github.models.managers.repository_contributor import RepositoryContributorManager
 
-TOP_CONTRIBUTORS_LIMIT = 25
+TOP_CONTRIBUTORS_LIMIT = 15
 
 
 class RepositoryContributor(BulkSaveModel, TimestampedModel):
     """Repository contributor model."""
 
+    objects = RepositoryContributorManager()
+
     class Meta:
         db_table = "github_repository_contributors"
+        indexes = [
+            models.Index(
+                fields=["user", "-contributions_count"], name="user_contributions_count_idx"
+            ),
+        ]
         unique_together = ("repository", "user")
         verbose_name_plural = "Repository contributors"
 
@@ -31,21 +39,31 @@ class RepositoryContributor(BulkSaveModel, TimestampedModel):
     )
 
     def __str__(self):
-        """Repository contributor human readable representation."""
+        """Return a human-readable representation of the repository contributor.
+
+        Returns
+            str: A string describing the user's contributions to the repository.
+
+        """
         return (
             f"{self.user} has made {self.contributions_count} "
             f"contribution{pluralize(self.contributions_count)} to {self.repository}"
         )
 
-    def from_github(self, gh_label):
-        """Update instance based on GitHub contributor data."""
+    def from_github(self, gh_contributions):
+        """Update the instance based on GitHub contributor data.
+
+        Args:
+            gh_contributions (github.NamedUser.Contributor): The GitHub contributor object.
+
+        """
         field_mapping = {
             "contributions_count": "contributions",
         }
 
         # Direct fields.
         for model_field, gh_field in field_mapping.items():
-            value = getattr(gh_label, gh_field)
+            value = getattr(gh_contributions, gh_field)
             if value is not None:
                 setattr(self, model_field, value)
 
@@ -56,7 +74,18 @@ class RepositoryContributor(BulkSaveModel, TimestampedModel):
 
     @staticmethod
     def update_data(gh_contributor, repository, user, save=True):
-        """Update repository contributor data."""
+        """Update repository contributor data.
+
+        Args:
+            gh_contributor (github.NamedUser.Contributor): The GitHub contributor object.
+            repository (Repository): The repository instance.
+            user (User): The user instance.
+            save (bool, optional): Whether to save the instance.
+
+        Returns:
+            RepositoryContributor: The updated or created repository contributor instance.
+
+        """
         try:
             repository_contributor = RepositoryContributor.objects.get(
                 repository=repository,

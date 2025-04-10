@@ -8,50 +8,36 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
+from django.views.decorators.csrf import csrf_protect
+from graphene_django.views import GraphQLView
 from rest_framework import routers
 
+from apps.core.api.algolia import algolia_search
+from apps.core.api.csrf import get_csrf_token
 from apps.github.api.urls import router as github_router
-from apps.owasp.api.search.chapter import chapters as search_chapters
-from apps.owasp.api.search.committee import committees as search_committees
-from apps.owasp.api.search.issue import project_issues as search_project_issues
-from apps.owasp.api.search.project import projects as search_projects
 from apps.owasp.api.urls import router as owasp_router
-from apps.owasp.views import home_page
+from apps.slack.apps import SlackConfig
 
 router = routers.DefaultRouter()
 router.registry.extend(github_router.registry)
 router.registry.extend(owasp_router.registry)
 
 urlpatterns = [
+    path("csrf/", get_csrf_token),
+    path("idx/", csrf_protect(algolia_search)),
+    path("graphql/", csrf_protect(GraphQLView.as_view(graphiql=settings.DEBUG))),
     path("api/v1/", include(router.urls)),
-    path("api/v1/owasp/search/issue", search_project_issues, name="api-search-project-issues"),
-    path("api/v1/owasp/search/project", search_projects, name="api-search-projects"),
-    path("api/v1/owasp/search/chapter", search_chapters, name="api-search-chapters"),
-    path("api/v1/owasp/search/committee", search_committees, name="api-search-committees"),
-    path(
-        "projects/",
-        TemplateView.as_view(template_name="search/project.html"),
-        name="projects",
-    ),
-    path(
-        "projects/contribute/",
-        TemplateView.as_view(template_name="search/issue.html"),
-        name="project-issues",
-    ),
-    path(
-        "chapters/",
-        TemplateView.as_view(template_name="search/chapter.html"),
-        name="chapters",
-    ),
-    path(
-        "committees/",
-        TemplateView.as_view(template_name="search/committee.html"),
-        name="committees",
-    ),
-    path("", home_page),
     path("a/", admin.site.urls),
 ]
+
+if SlackConfig.app:
+    from apps.slack.views import slack_request_handler
+
+    urlpatterns += [
+        path("integrations/slack/commands/", slack_request_handler),
+        path("integrations/slack/events/", slack_request_handler),
+        path("integrations/slack/interactivity/", slack_request_handler),
+    ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

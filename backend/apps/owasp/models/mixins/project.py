@@ -1,10 +1,14 @@
 """OWASP app project mixins."""
 
 from apps.common.utils import join_values
-from apps.owasp.models.mixins.common import GenericEntityMixin
+from apps.owasp.models.mixins.common import RepositoryBasedEntityModelMixin
+
+ISSUES_LIMIT = 6
+RELEASES_LIMIT = 4
+REPOSITORIES_LIMIT = 4
 
 
-class ProjectIndexMixin(GenericEntityMixin):
+class ProjectIndexMixin(RepositoryBasedEntityModelMixin):
     """Project index mixin."""
 
     @property
@@ -18,9 +22,29 @@ class ProjectIndexMixin(GenericEntityMixin):
         return self.contributors_count
 
     @property
+    def idx_custom_tags(self):
+        """Return custom tags for indexing."""
+        return self.custom_tags
+
+    @property
     def idx_forks_count(self):
         """Return forks count for indexing."""
         return self.forks_count
+
+    @property
+    def idx_is_active(self):
+        """Return active status for indexing."""
+        return self.is_active
+
+    @property
+    def idx_issues_count(self):
+        """Return issues count for indexing."""
+        return self.open_issues.count()
+
+    @property
+    def idx_key(self):
+        """Return key for indexing."""
+        return self.key.replace("www-project-", "")
 
     @property
     def idx_languages(self):
@@ -48,6 +72,29 @@ class ProjectIndexMixin(GenericEntityMixin):
         return join_values(fields=(o.name for o in self.organizations.all()))
 
     @property
+    def idx_repositories(self):
+        """Return repositories for indexing."""
+        return [
+            {
+                "contributors_count": r.contributors_count,
+                "description": r.description,
+                "forks_count": r.forks_count,
+                "key": r.key.lower(),
+                "latest_release": str(r.latest_release.summary) if r.latest_release else "",
+                "license": r.license,
+                "name": r.name,
+                "owner_key": r.owner.login.lower(),
+                "stars_count": r.stars_count,
+            }
+            for r in self.repositories.order_by("-stars_count")[:REPOSITORIES_LIMIT]
+        ]
+
+    @property
+    def idx_repositories_count(self):
+        """Return repositories count for indexing."""
+        return self.repositories.count()
+
+    @property
     def idx_stars_count(self):
         """Return stars count for indexing."""
         return self.stars_count
@@ -65,4 +112,4 @@ class ProjectIndexMixin(GenericEntityMixin):
     @property
     def idx_updated_at(self):
         """Return updated at for indexing."""
-        return self.updated_at
+        return self.updated_at.timestamp() if self.updated_at else ""

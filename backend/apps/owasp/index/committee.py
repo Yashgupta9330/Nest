@@ -1,19 +1,18 @@
 """OWASP app chapter index."""
 
-from algoliasearch_django import AlgoliaIndex
-from algoliasearch_django.decorators import register
-
+from apps.common.index import IndexBase, register
 from apps.owasp.models.committee import Committee
 
 
 @register(Committee)
-class CommitteeIndex(AlgoliaIndex):
+class CommitteeIndex(IndexBase):
     """Committee index."""
 
     index_name = "committees"
 
     fields = (
         "idx_created_at",
+        "idx_key",
         "idx_leaders",
         "idx_name",
         "idx_related_urls",
@@ -25,6 +24,11 @@ class CommitteeIndex(AlgoliaIndex):
     )
 
     settings = {
+        "attributesForFaceting": [
+            "filterOnly(idx_key)",
+            "idx_name",
+            "idx_tags",
+        ],
         "indexLanguages": ["en"],
         "customRanking": [
             "asc(idx_name)",
@@ -42,15 +46,16 @@ class CommitteeIndex(AlgoliaIndex):
         ],
         "searchableAttributes": [
             "unordered(idx_name)",
-            "unordered(idx_leaders, idx_top_contributors.login, idx_top_contributors.name)",
+            "unordered(idx_leaders)"
+            "unordered(idx_top_contributors.login, idx_top_contributors.name)",
             "unordered(idx_tags)",
         ],
     }
 
     should_index = "is_indexable"
 
-    def get_queryset(self):
-        """Get queryset."""
-        return Committee.active_committees.prefetch_related(
+    def get_entities(self):
+        """Get entities for indexing."""
+        return Committee.active_committees.select_related(
             "owasp_repository",
         )

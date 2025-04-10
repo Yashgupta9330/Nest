@@ -9,7 +9,6 @@ from github.GithubException import UnknownObjectException
 
 from apps.github.common import sync_repository
 from apps.github.constants import GITHUB_ITEMS_PER_PAGE
-from apps.github.models.issue import Issue
 from apps.github.utils import get_repository_path
 from apps.owasp.models.project import Project
 
@@ -17,20 +16,33 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Command to update OWASP project related repositories."""
+
     help = "Updates OWASP project related repositories."
 
     def add_arguments(self, parser):
+        """Add command-line arguments to the parser.
+
+        Args:
+            parser (argparse.ArgumentParser): The argument parser instance.
+
+        """
         parser.add_argument("--offset", default=0, required=False, type=int)
 
     def handle(self, *args, **options):
+        """Handle the command execution.
+
+        Args:
+            *args: Variable length argument list.
+            **options: Arbitrary keyword arguments containing command options.
+
+        """
         active_projects = Project.active_projects.order_by("-created_at")
         active_projects_count = active_projects.count()
         gh = github.Github(os.getenv("GITHUB_TOKEN"), per_page=GITHUB_ITEMS_PER_PAGE)
 
-        issues = []
-        projects = []
-
         offset = options["offset"]
+        projects = []
         for idx, project in enumerate(active_projects[offset:]):
             prefix = f"{idx + offset + 1} of {active_projects_count}"
             print(f"{prefix:<10} {project.owasp_url}")
@@ -60,5 +72,4 @@ class Command(BaseCommand):
             projects.append(project)
 
         # Bulk save data.
-        Issue.bulk_save(issues)
         Project.bulk_save(projects)

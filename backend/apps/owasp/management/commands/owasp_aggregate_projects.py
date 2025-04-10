@@ -9,9 +9,22 @@ class Command(BaseCommand):
     help = "Aggregate OWASP projects data."
 
     def add_arguments(self, parser):
+        """Add command-line arguments to the parser.
+
+        Args:
+            parser (argparse.ArgumentParser): The argument parser instance.
+
+        """
         parser.add_argument("--offset", default=0, required=False, type=int)
 
     def handle(self, *_args, **options):
+        """Handle the command execution.
+
+        Args:
+            *_args: Variable length argument list.
+            **options: Arbitrary keyword arguments containing command options.
+
+        """
         active_projects = Project.active_projects.order_by("-created_at")
         active_projects_count = active_projects.count()
 
@@ -30,14 +43,14 @@ class Command(BaseCommand):
             pushed_at = []
             released_at = []
 
-            commits_count = []
-            contributors_count = []
-            forks_count = []
-            open_issues_count = []
-            releases_count = []
-            stars_count = []
-            subscribers_count = []
-            watchers_count = []
+            commits_count = 0
+            contributors_count = 0
+            forks_count = 0
+            open_issues_count = 0
+            releases_count = 0
+            stars_count = 0
+            subscribers_count = 0
+            watchers_count = 0
 
             languages = set()
             licenses = set()
@@ -59,14 +72,14 @@ class Command(BaseCommand):
                     released_at.append(repository.latest_release.published_at)
 
                 # Counters.
-                commits_count.append(repository.commits_count)
-                contributors_count.append(repository.contributors_count)
-                forks_count.append(repository.forks_count)
-                open_issues_count.append(repository.open_issues_count)
-                releases_count.append(repository.releases.count())
-                stars_count.append(repository.stars_count)
-                subscribers_count.append(repository.subscribers_count)
-                watchers_count.append(repository.watchers_count)
+                commits_count += repository.commits_count
+                contributors_count += repository.contributors_count
+                forks_count += repository.forks_count
+                open_issues_count += repository.open_issues_count
+                releases_count += repository.releases.count()
+                stars_count += repository.stars_count
+                subscribers_count += repository.subscribers_count
+                watchers_count += repository.watchers_count
 
                 languages.update(repository.top_languages)
                 if repository.license:
@@ -79,14 +92,14 @@ class Command(BaseCommand):
                 project.released_at = max(released_at)
             project.updated_at = max(pushed_at + released_at)
 
-            project.commits_count = max(commits_count)
-            project.contributors_count = max(contributors_count)
-            project.forks_count = max(forks_count)
-            project.open_issues_count = max(open_issues_count)
-            project.releases_count = max(releases_count)
-            project.stars_count = max(stars_count)
-            project.subscribers_count = max(subscribers_count)
-            project.watchers_count = max(watchers_count)
+            project.commits_count = commits_count
+            project.contributors_count = contributors_count
+            project.forks_count = forks_count
+            project.open_issues_count = open_issues_count
+            project.releases_count = releases_count
+            project.stars_count = stars_count
+            project.subscribers_count = subscribers_count
+            project.watchers_count = watchers_count
 
             project.languages = sorted(languages)
             project.licenses = sorted(licenses)

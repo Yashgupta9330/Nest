@@ -1,104 +1,49 @@
-"""Slack bot contribute command."""
+"""Slack bot projects command."""
 
 from django.conf import settings
-from django.template.defaultfilters import pluralize
-from django.utils.text import Truncator
 
-from apps.common.utils import get_absolute_url, natural_date, natural_number
 from apps.slack.apps import SlackConfig
-from apps.slack.blocks import markdown
-from apps.slack.constants import FEEDBACK_CHANNEL_MESSAGE
-from apps.slack.utils import escape
+from apps.slack.common.handlers.projects import get_blocks
+from apps.slack.common.presentation import EntityPresentation
+from apps.slack.utils import get_text
 
 COMMAND = "/projects"
-NAME_TRUNCATION_LIMIT = 80
 
 
-def handler(ack, command, client):
-    """Slack /projects command handler."""
-    from apps.owasp.api.search.project import get_projects
-    from apps.owasp.models.project import Project
+def projects_handler(ack, command, client):
+    """Handle the Slack /projects command.
 
+    Args:
+        ack (function): Acknowledge the Slack command request.
+        command (dict): The Slack command payload.
+        client (slack_sdk.WebClient): The Slack WebClient instance for API calls.
+
+    """
     ack()
     if not settings.SLACK_COMMANDS_ENABLED:
         return
 
-    search_query = command["text"]
-    search_query_escaped = escape(command["text"])
-    blocks = [
-        markdown(f"*No results found for `{COMMAND} {search_query_escaped}`*\n"),
-    ]
-
-    attributes = [
-        "idx_contributors_count",
-        "idx_forks_count",
-        "idx_leaders",
-        "idx_level",
-        "idx_name",
-        "idx_stars_count",
-        "idx_summary",
-        "idx_updated_at",
-        "idx_url",
-    ]
-    if projects := get_projects(search_query, attributes=attributes, limit=10):
-        blocks = [
-            markdown(
-                (
-                    f"\n*Here are top 10 most OWASP projects "
-                    f"that I found based on *\n `{COMMAND} {search_query_escaped}`:\n"
-                )
-                if search_query_escaped
-                else (
-                    "\n*Here are top 10 OWASP projects:*\n"
-                    "You can refine the results by using a more specific query, e.g.\n"
-                    f"`{COMMAND} application security`"
-                )
-            ),
-        ]
-
-        for idx, project in enumerate(projects):
-            name_truncated = Truncator(escape(project["idx_name"])).chars(
-                NAME_TRUNCATION_LIMIT, truncate="..."
-            )
-            contributors_count = (
-                f", {natural_number(project['idx_contributors_count'], unit='contributor')}"
-                if project["idx_contributors_count"]
-                else ""
-            )
-            forks_count = (
-                f", {natural_number(project['idx_forks_count'], unit='fork')}"
-                if project["idx_forks_count"]
-                else ""
-            )
-            stars_count = (
-                f", {natural_number(project['idx_stars_count'], unit='star')}"
-                if project["idx_stars_count"]
-                else ""
-            )
-            leaders = project["idx_leaders"]
-            blocks.append(
-                markdown(
-                    f"\n*{idx + 1}.* <{project['idx_url']}|*{name_truncated}*>\n"
-                    f"_Updated {natural_date(project['idx_updated_at'])}"
-                    f"{stars_count}{forks_count}{contributors_count}_\n"
-                    f"_{project['idx_level'].capitalize()} project. "
-                    f"Leader{pluralize(len(leaders))}: {', '.join(leaders)}_\n"
-                    f"{escape(project['idx_summary'])}\n"
-                )
-            )
-
-        blocks.append(
-            markdown(
-                f"⚠️ *Extended search over {Project.active_projects_count()} OWASP projects "
-                f"is available at <{get_absolute_url('projects')}"
-                f"?q={search_query}|{settings.SITE_NAME}>*\n"
-                f"{FEEDBACK_CHANNEL_MESSAGE}"
-            ),
-        )
+    search_query = command["text"].strip()
+    blocks = get_blocks(
+        search_query=search_query,
+        limit=10,
+        presentation=EntityPresentation(
+            include_feedback=True,
+            include_metadata=True,
+            include_pagination=False,
+            include_timestamps=True,
+            name_truncation=80,
+            summary_truncation=300,
+        ),
+    )
 
     conversation = client.conversations_open(users=command["user_id"])
-    client.chat_postMessage(channel=conversation["channel"]["id"], blocks=blocks)
+    client.chat_postMessage(
+        blocks=blocks,
+        channel=conversation["channel"]["id"],
+        text=get_text(blocks),
+    )
 
 
 if SlackConfig.app:
-    handler = SlackConfig.app.command(COMMAND)(handler)
+    projects_handler = SlackConfig.app.command(COMMAND)(projects_handler)

@@ -8,15 +8,17 @@ from settings.base import Base
 class Local(Base):
     """Local configuration."""
 
-    DEBUG = True
-
-    SLACK_COMMANDS_ENABLED = True
-    SLACK_EVENTS_ENABLED = True
-
     APP_NAME = "OWASP Nest Local"
 
-    LOCAL_EXTERNAL_IP = values.SecretValue(environ_name="LOCAL_EXTERNAL_IP")
-    CORS_ALLOWED_ORIGINS = (
+    ALLOWED_ORIGINS = (
+        "http://127.0.0.1:3000",
         "http://localhost:3000",
-        "http://localhost:8000",
     )
+    CORS_ALLOWED_ORIGINS = ALLOWED_ORIGINS
+    CSRF_TRUSTED_ORIGINS = ALLOWED_ORIGINS
+
+    DEBUG = True
+    LOGGING = {}
+    PUBLIC_IP_ADDRESS = values.Value()
+    SLACK_COMMANDS_ENABLED = True
+    SLACK_EVENTS_ENABLED = True

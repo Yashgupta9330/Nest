@@ -1,10 +1,19 @@
 """OWASP app chapter mixins."""
 
-from apps.owasp.models.mixins.common import GenericEntityMixin
+from apps.owasp.models.mixins.common import RepositoryBasedEntityModelMixin
 
 
-class ChapterIndexMixin(GenericEntityMixin):
+class ChapterIndexMixin(RepositoryBasedEntityModelMixin):
     """Chapter index mixin."""
+
+    @property
+    def is_indexable(self):
+        """Chapters to index."""
+        return (
+            self.latitude is not None
+            and self.longitude is not None
+            and not self.owasp_repository.is_empty
+        )
 
     @property
     def idx_country(self):
@@ -14,12 +23,22 @@ class ChapterIndexMixin(GenericEntityMixin):
     @property
     def idx_created_at(self):
         """Return created at for indexing."""
-        return self.created_at or self.owasp_repository.created_at
+        return (self.created_at or self.owasp_repository.created_at).timestamp()
 
     @property
     def idx_geo_location(self):
         """Return geographic location for indexing."""
         return self.latitude, self.longitude
+
+    @property
+    def idx_is_active(self):
+        """Return active status for indexing."""
+        return self.is_active
+
+    @property
+    def idx_key(self):
+        """Return key for indexing."""
+        return self.key.replace("www-chapter-", "")
 
     @property
     def idx_meetup_group(self):
@@ -44,7 +63,7 @@ class ChapterIndexMixin(GenericEntityMixin):
     @property
     def idx_suggested_location(self):
         """Return suggested location for indexing."""
-        return self.suggested_location
+        return self.suggested_location if self.suggested_location != "None" else ""
 
     @property
     def idx_top_contributors(self):
@@ -54,4 +73,4 @@ class ChapterIndexMixin(GenericEntityMixin):
     @property
     def idx_updated_at(self):
         """Return updated at for indexing."""
-        return self.updated_at or self.owasp_repository.updated_at
+        return (self.updated_at or self.owasp_repository.updated_at).timestamp()

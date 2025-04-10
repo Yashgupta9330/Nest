@@ -15,6 +15,12 @@ class Command(BaseCommand):
     help = "Enrich OWASP committees with AI generated data."
 
     def add_arguments(self, parser):
+        """Add command-line arguments to the parser.
+
+        Args:
+            parser (argparse.ArgumentParser): The argument parser instance.
+
+        """
         parser.add_argument("--offset", default=0, required=False, type=int)
         parser.add_argument(
             "--force-update-summary", default=False, required=False, action="store_true"
@@ -22,6 +28,16 @@ class Command(BaseCommand):
         parser.add_argument("--update-summary", default=True, required=False, action="store_true")
 
     def handle(self, *args, **options):
+        """Execute the enrichment process for OWASP committees.
+
+        Args:
+            *args: Variable length argument list.
+            **options: Arbitrary keyword arguments containing:
+                offset (int): The starting index for processing.
+                force_update_summary (bool): Whether to force updating summaries.
+                update_summary (bool): Whether to update summaries.
+
+        """
         open_ai = OpenAi()
 
         force_update_summary = options["force_update_summary"]
@@ -45,10 +61,8 @@ class Command(BaseCommand):
             print(f"{prefix:<10} {committee.owasp_url}")
 
             # Generate summary
-            if update_summary:
-                committee.generate_summary(
-                    prompt=Prompt.get_owasp_committee_summary(), open_ai=open_ai
-                )
+            if update_summary and (prompt := Prompt.get_owasp_committee_summary()):
+                committee.generate_summary(prompt=prompt, open_ai=open_ai)
 
             committees.append(committee)
 

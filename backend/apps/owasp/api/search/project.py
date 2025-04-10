@@ -1,17 +1,24 @@
 """OWASP app project search API."""
 
 from algoliasearch_django import raw_search
-from django.core.cache import cache
-from django.http import JsonResponse
 
-from apps.common.constants import DAY_IN_SECONDS
 from apps.owasp.models.project import Project
 
-PROJECT_CACHE_PREFIX = "project:"
 
+def get_projects(query, attributes=None, limit=25, page=1, searchable_attributes=None):
+    """Return projects relevant to a search query.
 
-def get_projects(query, attributes=None, limit=25):
-    """Return projects relevant to a search query."""
+    Args:
+        query (str): The search query string.
+        attributes (list, optional): List of attributes to retrieve.
+        limit (int, optional): Number of results per page.
+        page (int, optional): Page number for pagination.
+        searchable_attributes (list, optional): Attributes to restrict the search to.
+
+    Returns:
+        dict: Search results containing projects matching the query.
+
+    """
     params = {
         "attributesToHighlight": [],
         "attributesToRetrieve": attributes
@@ -31,26 +38,11 @@ def get_projects(query, attributes=None, limit=25):
         ],
         "hitsPerPage": limit,
         "minProximity": 4,
+        "page": page - 1,
         "typoTolerance": "min",
     }
 
-    return raw_search(Project, query, params)["hits"]
+    if searchable_attributes:
+        params["restrictSearchableAttributes"] = searchable_attributes
 
-
-def projects(request):
-    """Search projects API endpoint."""
-    query = request.GET.get("q", "")
-    cache_key = f"{PROJECT_CACHE_PREFIX}{query}"
-    projects = cache.get(cache_key)
-
-    if projects is None:
-        projects = get_projects(query)
-        cache.set(cache_key, projects, DAY_IN_SECONDS)
-
-    return JsonResponse(
-        {
-            "active_projects_count": Project.active_projects_count(),
-            "projects": projects,
-        },
-        safe=False,
-    )
+    return raw_search(Project, query, params)

@@ -1,85 +1,63 @@
 """Slack bot contribute command."""
 
 from django.conf import settings
-from django.utils.text import Truncator
 
-from apps.common.utils import get_absolute_url
+from apps.common.constants import NL
 from apps.slack.apps import SlackConfig
 from apps.slack.blocks import markdown
-from apps.slack.constants import FEEDBACK_CHANNEL_MESSAGE
-from apps.slack.utils import escape
+from apps.slack.common.constants import COMMAND_HELP, COMMAND_START
+from apps.slack.common.handlers.contribute import get_blocks
+from apps.slack.common.presentation import EntityPresentation
+from apps.slack.utils import get_text
 
 COMMAND = "/contribute"
-SUMMARY_TRUNCATION_LIMIT = 255
-TITLE_TRUNCATION_LIMIT = 80
 
 
-def handler(ack, command, client):
-    """Slack /contribute command handler."""
-    from apps.github.models.issue import Issue
-    from apps.owasp.api.search.issue import get_issues
+def contribute_handler(ack, command, client):
+    """Handle the Slack /contribute command.
 
+    Args:
+        ack (function): Acknowledge the Slack command request.
+        command (dict): The Slack command payload.
+        client (slack_sdk.WebClient): The Slack WebClient instance for API calls.
+
+    """
     ack()
     if not settings.SLACK_COMMANDS_ENABLED:
         return
 
-    search_query = command["text"].strip()
-    search_query_escaped = escape(command["text"])
-    blocks = [
-        markdown(f"*No results found for `{COMMAND} {search_query_escaped}`*\n"),
-    ]
+    command_text = command["text"].strip()
 
-    attributes = [
-        "idx_project_name",
-        "idx_summary",
-        "idx_title",
-        "idx_url",
-    ]
-    if issues := get_issues(
-        search_query, attributes=attributes, distinct=not search_query, limit=10
-    ):
+    if command_text in COMMAND_HELP:
         blocks = [
             markdown(
-                (
-                    f"\n*Here are top 10 most relevant issues "
-                    f"that I found based on *\n `{COMMAND} {search_query_escaped}`:\n"
-                )
-                if search_query_escaped
-                else (
-                    "\n*Here are top 10 most recent issues:*\n"
-                    "You can refine the results by using a more specific query, e.g.\n"
-                    f"`{COMMAND} python good first issue`"
-                )
+                f"*Available Commands for Contributing:*{NL}"
+                f"•`/contribute` - View all available issues.{NL}"
+                f"•`/contribute <search term>` - Search for contribution opportunities.{NL}"
             ),
         ]
-
-        for idx, issue in enumerate(issues):
-            title_truncated = Truncator(escape(issue["idx_title"])).chars(
-                TITLE_TRUNCATION_LIMIT, truncate="..."
-            )
-            summary_truncated = Truncator(issue["idx_summary"]).chars(
-                SUMMARY_TRUNCATION_LIMIT, truncate="..."
-            )
-            blocks.append(
-                markdown(
-                    f"\n*{idx + 1}.* <{issue['idx_url']}|*{title_truncated}*>\n"
-                    f"{escape(issue['idx_project_name'])}\n"
-                    f"{escape(summary_truncated)}\n"
-                ),
-            )
-
-        blocks.append(
-            markdown(
-                f"⚠️ *Extended search over {Issue.open_issues_count()} open issues "
-                f"is available at <{get_absolute_url('project-issues')}"
-                f"?q={search_query}|{settings.SITE_NAME}>*\n"
-                f"{FEEDBACK_CHANNEL_MESSAGE}"
+    else:
+        search_query = "" if command_text in COMMAND_START else command_text
+        blocks = get_blocks(
+            search_query=search_query,
+            limit=10,
+            presentation=EntityPresentation(
+                include_feedback=True,
+                include_metadata=True,
+                include_pagination=False,
+                include_timestamps=True,
+                name_truncation=80,
+                summary_truncation=300,
             ),
         )
 
     conversation = client.conversations_open(users=command["user_id"])
-    client.chat_postMessage(channel=conversation["channel"]["id"], blocks=blocks)
+    client.chat_postMessage(
+        channel=conversation["channel"]["id"],
+        blocks=blocks,
+        text=get_text(blocks),
+    )
 
 
 if SlackConfig.app:
-    handler = SlackConfig.app.command(COMMAND)(handler)
+    contribute_handler = SlackConfig.app.command(COMMAND)(contribute_handler)

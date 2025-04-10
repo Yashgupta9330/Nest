@@ -1,0 +1,36 @@
+FROM python:3.13.3-alpine AS builder
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+
+RUN apk update && apk upgrade && \
+    addgroup -S owasp && \
+    adduser -S -h /home/owasp -G owasp owasp && \
+    python -m pip install --no-cache-dir poetry
+
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
+    PYTHONUNBUFFERED=1
+
+USER owasp
+WORKDIR /home/owasp
+
+COPY --chmod=444 --chown=owasp:owasp poetry.lock pyproject.toml ./
+RUN poetry install --no-root --without dev --without test
+
+FROM python:3.13.3-alpine
+
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+
+RUN apk update && \
+    apk add postgresql-client && \
+    addgroup -S owasp && \
+    adduser -S -h /home/owasp -G owasp owasp && \
+    python -m pip install --no-cache-dir poetry
+
+ENV PATH="/home/owasp/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1
+
+EXPOSE 8000
+
+USER owasp
+WORKDIR /home/owasp
+
+COPY --from=builder --chmod=755 --chown=owasp:owasp /home/owasp /home/owasp

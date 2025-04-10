@@ -7,12 +7,14 @@ from settings.base import Base
 
 
 class Staging(Base):
-    """Stagind configuration."""
+    """Staging configuration."""
 
     sentry_sdk.init(
-        dsn=values.SecretValue(environ_name="SENTRY_DSN"),
-        traces_sample_rate=0.5,
+        dsn=Base.SENTRY_DSN,
+        environment=Base.ENVIRONMENT.lower(),
         profiles_sample_rate=0.5,
+        release=Base.RELEASE_VERSION,
+        traces_sample_rate=0.5,
     )
 
     AWS_ACCESS_KEY_ID = values.SecretValue()
@@ -39,9 +41,11 @@ class Staging(Base):
 
     APP_NAME = "OWASP Nest Staging"
     SITE_NAME = "nest.owasp.dev"
-    SITE_URL = "https://nest.owasp.dev"
+    SITE_URL = f"https://{SITE_NAME}"
 
-    CSRF_TRUSTED_ORIGINS = (SITE_URL,)
+    ALLOWED_ORIGINS = (SITE_URL,)
+    CORS_ALLOWED_ORIGINS = ALLOWED_ORIGINS
+    CSRF_TRUSTED_ORIGINS = ALLOWED_ORIGINS
 
     SLACK_COMMANDS_ENABLED = True
     SLACK_EVENTS_ENABLED = True

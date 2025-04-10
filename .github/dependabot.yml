@@ -1,9 +1,41 @@
 version: 2
 updates:
   - package-ecosystem: docker
-    directory: /backend
+    directory: /backend/docker
     schedule:
       interval: daily
+
+  - package-ecosystem: docker
+    directory: /cspell
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /docs/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /frontend/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /schema/docker
+    schedule:
+      interval: daily
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    target-branch: main
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: daily
+    target-branch: main
 
   - package-ecosystem: pip
     directory: /backend
@@ -11,8 +43,14 @@ updates:
       interval: daily
     target-branch: main
 
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: pip
+    directory: /docs
+    schedule:
+      interval: daily
+    target-branch: main
+
+  - package-ecosystem: pip
+    directory: /schema
     schedule:
       interval: daily
     target-branch: main

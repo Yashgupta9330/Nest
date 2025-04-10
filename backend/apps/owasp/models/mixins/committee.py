@@ -1,15 +1,20 @@
 """OWASP app committee mixins."""
 
-from apps.owasp.models.mixins.common import GenericEntityMixin
+from apps.owasp.models.mixins.common import RepositoryBasedEntityModelMixin
 
 
-class CommitteeIndexMixin(GenericEntityMixin):
+class CommitteeIndexMixin(RepositoryBasedEntityModelMixin):
     """Committee index mixin."""
 
     @property
     def idx_created_at(self):
         """Return created at for indexing."""
-        return self.created_at
+        return self.created_at.timestamp()
+
+    @property
+    def idx_key(self):
+        """Return key for indexing."""
+        return self.key.replace("www-committee-", "")
 
     @property
     def idx_related_urls(self):
@@ -24,4 +29,4 @@ class CommitteeIndexMixin(GenericEntityMixin):
     @property
     def idx_updated_at(self):
         """Return updated at for indexing."""
-        return self.updated_at
+        return self.updated_at.timestamp()

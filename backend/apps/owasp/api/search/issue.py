@@ -1,17 +1,26 @@
 """OWASP app issue search API."""
 
 from algoliasearch_django import raw_search
-from django.core.cache import cache
-from django.http import JsonResponse
 
-from apps.common.constants import DAY_IN_SECONDS
 from apps.github.models.issue import Issue
 
 ISSUE_CACHE_PREFIX = "issue:"
 
 
-def get_issues(query, attributes=None, distinct=False, limit=25):
-    """Return issues relevant to a search query."""
+def get_issues(query, attributes=None, distinct=False, limit=25, page=1):
+    """Return issues relevant to a search query.
+
+    Args:
+        query (str): The search query string.
+        attributes (list, optional): List of attributes to retrieve.
+        distinct (bool, optional): Whether to enable distinct mode.
+        limit (int, optional): Number of results per page.
+        page (int, optional): Page number for pagination.
+
+    Returns:
+        dict: Search results containing issues matching the query.
+
+    """
     params = {
         "attributesToHighlight": [],
         "attributesToRetrieve": attributes
@@ -29,28 +38,10 @@ def get_issues(query, attributes=None, distinct=False, limit=25):
             "idx_url",
         ],
         "hitsPerPage": limit,
+        "page": page - 1,
     }
 
     if distinct:
         params["distinct"] = 1
 
-    return raw_search(Issue, query, params)["hits"]
-
-
-def project_issues(request):
-    """Search project issues API endpoint."""
-    query = request.GET.get("q", "").strip()
-    cache_key = f"{ISSUE_CACHE_PREFIX}{query}"
-    issues = cache.get(cache_key)
-
-    if issues is None:
-        issues = get_issues(query, distinct=not query)
-        cache.set(cache_key, issues, DAY_IN_SECONDS)
-
-    return JsonResponse(
-        {
-            "issues": issues,
-            "open_issues_count": Issue.open_issues_count(),
-        },
-        safe=False,
-    )
+    return raw_search(Issue, query, params)

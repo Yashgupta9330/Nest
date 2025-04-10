@@ -1,46 +1,40 @@
-import { useState, useEffect } from "react";
-import { cn } from "../lib/utils";
-import FontAwesomeIconWrapper from "../lib/FontAwesomeIconWrapper";
+import { faMoon, faSun } from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Button } from '@heroui/button'
+import { Tooltip } from '@heroui/tooltip'
+import { useTheme } from 'next-themes'
+import { useState, useEffect } from 'react'
+export default function ModeToggle() {
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme()
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-function ModeToggle({ className }: { className?: string }) {
-    const [dark, setDark] = useState(() => {
-        return localStorage.getItem("theme") === "dark";
-    });
+  const darkModeHandler = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
-    useEffect(() => {
-        if (dark) {
-            document.body.classList.add("dark");
-        } else {
-            document.body.classList.remove("dark");
-        }
-    }, [dark]);
+  if (!mounted) return null
 
-    const darkModeHandler = () => {
-        setDark(!dark);
-        const newTheme = !dark ? "dark" : "light";
-        document.body.classList.toggle("dark", !dark);
-        localStorage.setItem("theme", newTheme);
-    };
-
-    return (
-        <div className={cn("flex items-center space-x-2", className)}>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                <FontAwesomeIconWrapper icon="fa-regular fa-lightbulb" />
-            </span>
-            <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={dark}
-                    onChange={darkModeHandler}
-                />
-                <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                <FontAwesomeIconWrapper icon="fa-solid fa-moon" />
-            </span>
-        </div>
-    );
+  return (
+    <div className="flex items-center">
+      <Tooltip showArrow content={theme === 'dark' ? 'Enable light mode' : 'Enable dark mode'}>
+        <Button
+          onPress={darkModeHandler}
+          className="relative h-10 w-10 transform rounded-full bg-[#87a1bc] transition-all duration-200 hover:ring-1 hover:ring-[#b0c7de] hover:ring-offset-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-900/90 dark:hover:ring-[#46576b]"
+          isIconOnly={true}
+          aria-label={theme === 'dark' ? 'Enable light mode' : 'Enable dark mode'}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <FontAwesomeIcon
+              icon={theme === 'dark' ? faSun : faMoon}
+              className="h-5 w-5 transform text-gray-900 transition-all duration-300 hover:rotate-12 dark:text-gray-100"
+              fixedWidth
+            />
+          </div>
+        </Button>
+      </Tooltip>
+    </div>
+  )
 }
-
-export default ModeToggle;

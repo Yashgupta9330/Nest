@@ -1,13 +1,11 @@
 """GitHub issue index."""
 
-from algoliasearch_django import AlgoliaIndex
-from algoliasearch_django.decorators import register
-
+from apps.common.index import IndexBase, register
 from apps.github.models.issue import Issue
 
 
 @register(Issue)
-class IssueIndex(AlgoliaIndex):
+class IssueIndex(IndexBase):
     """Issue index."""
 
     index_name = "issues"
@@ -38,6 +36,13 @@ class IssueIndex(AlgoliaIndex):
     )
 
     settings = {
+        "attributesForFaceting": [
+            "idx_title",
+            "idx_project_name",
+            "idx_repository_name",
+            "idx_project_tags",
+            "idx_repository_topics",
+        ],
         "attributeForDistinct": "idx_project_name",
         "minProximity": 4,
         "indexLanguages": ["en"],
@@ -71,8 +76,23 @@ class IssueIndex(AlgoliaIndex):
 
     should_index = "is_indexable"
 
-    def get_queryset(self):
-        """Get queryset."""
+    @staticmethod
+    def update_synonyms():
+        """Update synonyms for the issue index.
+
+        Returns
+            None
+
+        """
+        return IndexBase.reindex_synonyms("github", "issues")
+
+    def get_entities(self):
+        """Get entities for indexing.
+
+        Returns
+            QuerySet: A queryset of Issue objects to be indexed.
+
+        """
         return Issue.open_issues.assignable.select_related(
             "repository",
         ).prefetch_related(
